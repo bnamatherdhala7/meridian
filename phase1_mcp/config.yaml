@@ -1,0 +1,12 @@
+splunk:
+  mode: mock  # set to "live" with SPLUNK_ENDPOINT + SPLUNK_TOKEN env vars
+  endpoint: "${SPLUNK_ENDPOINT}"
+  token: "${SPLUNK_TOKEN}"
+
+claude:
+  model: claude-sonnet-4-6
+  max_tokens: 4096
+
+agent:
+  max_tool_calls: 10
+  confidence_threshold: 0.75
