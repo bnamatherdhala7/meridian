@@ -162,6 +162,7 @@ class IncidentReport:
     input_tokens: int
     output_tokens: int
     duration_secs: float
+    incident_description: str = ""
 
 
 class IncidentCommander:
@@ -353,6 +354,14 @@ class IncidentCommander:
                     self.confidence = 0.4
                 break
 
+        description = (
+            f"Incident {scenario['incident_id']}: {scenario.get('description', '')}\n"
+            f"Device: {scenario.get('device', 'unknown')}  "
+            f"Interface: {scenario.get('interface', 'unknown')}  "
+            f"Site: {scenario.get('site', 'unknown')}  "
+            f"Severity: {scenario.get('severity', 'unknown')}  "
+            f"Reported: {scenario.get('reported_at', 'unknown')}"
+        )
         return IncidentReport(
             incident_id=scenario["incident_id"],
             final_state=self.state,
@@ -366,6 +375,7 @@ class IncidentCommander:
             input_tokens=self.input_tokens,
             output_tokens=self.output_tokens,
             duration_secs=round(time.time() - start, 2),
+            incident_description=description,
         )
 
 
