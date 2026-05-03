@@ -18,7 +18,7 @@ Do not call transition_state to RESOLVED unless a fix is confirmed.
 STATE_PROMPTS: dict[str, str] = {
     "TRIAGE": _BASE + """
 You are in TRIAGE. Scope the incident before diving in.
-- Check available Splunk indexes (search_indexes) to know what data exists
+- Check available SP indexes (search_indexes) to know what data exists
 - Check network topology (get_network_topology) to understand the affected device's role
 - Once you understand scope, transition to INVESTIGATING
 """,

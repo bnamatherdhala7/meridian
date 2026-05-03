@@ -1,7 +1,7 @@
-"""Mocked Splunk MCP tools — same interface as real Splunk GA MCP server.
+"""Mocked SP MCP tools — same interface as real SP GA MCP server.
 
-Swap mode to "live" in config.yaml + set SPLUNK_ENDPOINT + SPLUNK_TOKEN env vars
-to connect to a real Splunk instance without changing any other code.
+Swap mode to "live" in config.yaml + set SP_ENDPOINT + SP_TOKEN env vars
+to connect to a real SP instance without changing any other code.
 """
 from typing import Any
 
@@ -19,7 +19,7 @@ _INDEXES = [
 _KNOWLEDGE_OBJECTS = [
     {"type": "saved_search", "name": "Interface Error Spike Alert",
      "search": "index=network_telemetry out_errors>1000"},
-    {"type": "field_extraction", "name": "cisco_interface_parser",
+    {"type": "field_extraction", "name": "ci_interface_parser",
      "fields": ["device_id", "interface", "in_errors", "out_errors", "drops"]},
     {"type": "lookup", "name": "device_inventory",
      "fields": ["device_id", "hostname", "site", "model"]},

@@ -9,8 +9,8 @@ from typing import Any, Callable
 import anthropic
 from transitions import Machine
 
-from phase1_mcp.tools.cisco import get_network_topology, get_telemetry_metrics
-from phase1_mcp.tools.splunk import (
+from phase1_mcp.tools.ci import get_network_topology, get_telemetry_metrics
+from phase1_mcp.tools.sp import (
     generate_spl,
     get_knowledge_objects,
     run_spl_query,
@@ -22,7 +22,7 @@ from phase2_agent.states import STATES, TRANSITIONS, VALID_TRANSITIONS
 _TOOL_DEFINITIONS: list[dict] = [
     {
         "name": "run_spl_query",
-        "description": "Execute an SPL query against Splunk. Returns matching events and statistics.",
+        "description": "Execute an SPL query against SP. Returns matching events and statistics.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -47,7 +47,7 @@ _TOOL_DEFINITIONS: list[dict] = [
     },
     {
         "name": "search_indexes",
-        "description": "Discover available Splunk indexes and their metadata.",
+        "description": "Discover available SP indexes and their metadata.",
         "input_schema": {
             "type": "object",
             "properties": {"query": {"type": "string"}},
@@ -55,7 +55,7 @@ _TOOL_DEFINITIONS: list[dict] = [
     },
     {
         "name": "get_knowledge_objects",
-        "description": "Surface saved searches, field extractions, and lookups from Splunk.",
+        "description": "Surface saved searches, field extractions, and lookups from SP.",
         "input_schema": {
             "type": "object",
             "properties": {"object_type": {"type": "string"}},
@@ -63,7 +63,7 @@ _TOOL_DEFINITIONS: list[dict] = [
     },
     {
         "name": "get_network_topology",
-        "description": "Get Cisco Catalyst network topology — device graph and links.",
+        "description": "Get CI Catalyst network topology — device graph and links.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -74,7 +74,7 @@ _TOOL_DEFINITIONS: list[dict] = [
     },
     {
         "name": "get_telemetry_metrics",
-        "description": "Get real-time interface-level telemetry metrics from a Cisco device.",
+        "description": "Get real-time interface-level telemetry metrics from a CI device.",
         "input_schema": {
             "type": "object",
             "properties": {

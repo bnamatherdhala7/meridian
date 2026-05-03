@@ -13,8 +13,8 @@
 | `--color-success` | `#3FB950` | RESOLVED state, high scores |
 | `--color-warning` | `#D29922` | HYPOTHESIZING state, mid scores |
 | `--color-danger` | `#F85149` | ESCALATING state, low scores |
-| `--color-cisco` | `#1BA0D7` | Cisco tool badges |
-| `--color-splunk` | `#65A637` | Splunk tool badges |
+| `--color-ci` | `#1BA0D7` | CI tool badges |
+| `--color-sp` | `#65A637` | SP tool badges |
 | `--color-neutral` | `#6E7681` | IDLE / TRIAGE states |
 
 ## FSM State Colours
@@ -65,7 +65,7 @@
 ### Zone Specifications
 
 **Zone 1 — MCP Tool Registry** (25% width)
-- Lists all 6 tools with source badge (SPLUNK / CISCO)
+- Lists all 6 tools with source badge (SP / CI)
 - Shows last-called tool highlighted in `--color-accent`
 - Connection status: `●  LIVE` in `--color-success` or `○  MOCK` in `--color-warning`
 
@@ -93,7 +93,7 @@
 
 ```
 ┌─ TOOL CALL ────────────────────────────────────┐
-│  [14:32:07]  run_spl_query          [SPLUNK]   │
+│  [14:32:07]  run_spl_query          [SP]   │
 │  ─────────────────────────────────────────────  │
 │  Input:  index=network host=SJ-SW-01           │
 │          | stats avg(out_errors) by interface   │

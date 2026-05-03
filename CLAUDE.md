@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Vigil** (working title: Splunk Agentic Ops — Incident Commander) is a Python project that builds an agentic reasoning layer on top of Splunk's GA MCP server. The system automates network incident investigation using a Finite State Machine (FSM) and evaluates agent run quality.
+**Vigil** (working title: SP Agentic Ops — Incident Commander) is a Python project that builds an agentic reasoning layer on top of SP's GA MCP server. The system automates network incident investigation using a Finite State Machine (FSM) and evaluates agent run quality.
 
 The full specification lives in `claude (5).md`.
 
@@ -44,7 +44,7 @@ ruff check . && mypy .
 ### Three-Phase Structure
 
 ```
-phase1_mcp/          # MCP tool registry — Splunk native + Cisco mocked tools
+phase1_mcp/          # MCP tool registry — SP native + CI mocked tools
 phase2_agent/        # FSM incident commander
 phase3_evaluator/    # Scoring: precision, recall, token cost
 demo/                # Single war room dashboard combining all three
@@ -52,12 +52,12 @@ demo/                # Single war room dashboard combining all three
 
 ### Phase 1 — MCP Connectivity Layer
 
-`phase1_mcp/server.py` registers MCP tools. Splunk's native tools (`run_spl_query`, `generate_spl`, `search_indexes`, `get_knowledge_objects`) are used as-is. Two Cisco tools are added on top:
+`phase1_mcp/server.py` registers MCP tools. SP's native tools (`run_spl_query`, `generate_spl`, `search_indexes`, `get_knowledge_objects`) are used as-is. Two CI tools are added on top:
 
-- `get_network_topology` — mocked Cisco Catalyst device graph
+- `get_network_topology` — mocked CI Catalyst device graph
 - `get_telemetry_metrics` — mocked interface counters with realistic field names: `device_id`, `interface`, `vlan`, `time_window`, `error_rate`
 
-All tools are **stateless** (pure request/response). Splunk connection config lives in `phase1_mcp/config.yaml`; the endpoint is swappable via env var.
+All tools are **stateless** (pure request/response). SP connection config lives in `phase1_mcp/config.yaml`; the endpoint is swappable via env var.
 
 ### Phase 2 — FSM Incident Commander
 
@@ -73,7 +73,7 @@ Transition rules:
 - Novel anomaly, ambiguous data, or risk above threshold → `ESCALATING`
 - Dead end after N tool calls → `ESCALATING`
 
-`phase2_agent/states.py` holds state definitions. `phase2_agent/prompts.py` holds per-state system prompts. The reference incident (packet loss on Cisco Catalyst GigE0/1, San Jose) lives in `phase2_agent/scenarios/packet_loss_sj.json`.
+`phase2_agent/states.py` holds state definitions. `phase2_agent/prompts.py` holds per-state system prompts. The reference incident (packet loss on CI Catalyst GigE0/1, San Jose) lives in `phase2_agent/scenarios/packet_loss_sj.json`.
 
 **Output is structured JSON** (see spec for schema) — not free-form text.
 
@@ -85,17 +85,17 @@ Two model modes are compared — both use the same base model:
 - `models/generic.py`: unconstrained call
 - `models/constrained.py`: same model + strict JSON schema system prompt
 
-The key insight: the "Cisco-tuned" model is **not a different model** — it's the same LLM with schema enforcement. This is intentional.
+The key insight: the "CI-tuned" model is **not a different model** — it's the same LLM with schema enforcement. This is intentional.
 
 ---
 
 ## Key Design Decisions
 
 - **FSM over free-form agent**: Auditable, predictable state transitions are required for live network infrastructure. This is an architectural choice, not a limitation.
-- **No mocking Splunk tools**: Phase 1 connects to the real Splunk MCP server. Only Cisco topology/telemetry are mocked.
-- **RBAC passthrough**: The agent inherits the Splunk user's permissions — no privilege escalation in the tool layer.
-- **Token cost is a first-class metric**: The evaluator surfaces this explicitly because Cisco/Splunk operates at scale.
-- **OAuth 2.0 is a documented stub**: It's on Splunk's roadmap. The architecture should accommodate it but not implement it.
+- **No mocking SP tools**: Phase 1 connects to the real SP MCP server. Only CI topology/telemetry are mocked.
+- **RBAC passthrough**: The agent inherits the SP user's permissions — no privilege escalation in the tool layer.
+- **Token cost is a first-class metric**: The evaluator surfaces this explicitly because CI/SP operates at scale.
+- **OAuth 2.0 is a documented stub**: It's on SP's roadmap. The architecture should accommodate it but not implement it.
 
 ---
 

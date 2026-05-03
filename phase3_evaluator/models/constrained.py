@@ -1,6 +1,6 @@
 """Constrained (schema-enforced) model — same base LLM, strict JSON output.
 
-The "Cisco-tuned" output is NOT a different model. It is the same claude-sonnet-4-6
+The "CI-tuned" output is NOT a different model. It is the same claude-sonnet-4-6
 with a strict system prompt that forces structured JSON and anomaly-focused output.
 This demonstrates that prompt engineering + schema enforcement can cut token waste
 by ~60% while improving actionability.

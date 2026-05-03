@@ -1,4 +1,4 @@
-"""Mocked Cisco network topology and telemetry tools."""
+"""Mocked CI network topology and telemetry tools."""
 from typing import Any
 
 _TOPOLOGY: dict[str, Any] = {

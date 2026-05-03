@@ -1,10 +1,10 @@
-# Meridian — Agentic Incident Commander for Splunk + Cisco
+# Meridian — Agentic Incident Commander for SP + CI
 
 **Model:** Claude claude-sonnet-4-6 · **Token reduction:** 11,000 → 4,200 per investigation (62%) · **Stack:** Python · MCP · FSM · Pydantic
 
-Splunk shipped the tools. Nobody shipped the brain.
+SP shipped the tools. Nobody shipped the brain.
 
-Meridian is the reasoning layer that sits on top of Splunk's GA MCP server — a Finite State Machine that decides which tools to call, in what order, and when to stop vs. escalate. It adds Cisco topology and telemetry context that Splunk's tooling doesn't have, then scores every run on precision, recall, and token cost.
+Meridian is the reasoning layer that sits on top of SP's GA MCP server — a Finite State Machine that decides which tools to call, in what order, and when to stop vs. escalate. It adds CI topology and telemetry context that SP's tooling doesn't have, then scores every run on precision, recall, and token cost.
 
 > Incident arrives → Agent investigates → Output is evaluated → Human is informed or system self-heals
 
@@ -12,7 +12,7 @@ Meridian is the reasoning layer that sits on top of Splunk's GA MCP server — a
 
 ## How It Works
 
-**1. Connect** — Meridian attaches to Splunk's real GA MCP server. No mocking. Four native tools (`run_spl_query`, `generate_spl`, `search_indexes`, `get_knowledge_objects`) plus two Cisco extensions (`get_network_topology`, `get_telemetry_metrics`) added on top.
+**1. Connect** — Meridian attaches to SP's real GA MCP server. No mocking. Four native tools (`run_spl_query`, `generate_spl`, `search_indexes`, `get_knowledge_objects`) plus two CI extensions (`get_network_topology`, `get_telemetry_metrics`) added on top.
 
 **2. Investigate** — An FSM drives a Plan → Act → Observe loop through seven states. Every transition is logged. Every tool call is justified. The agent builds a hypothesis incrementally — it doesn't guess upfront.
 
@@ -24,7 +24,7 @@ Meridian is the reasoning layer that sits on top of Splunk's GA MCP server — a
 
 | Phase | What It Is | Deliverable |
 |---|---|---|
-| **Phase 1 — MCP Layer** | Connects to Splunk GA + adds Cisco tools | Tool registry with 6 callable tools |
+| **Phase 1 — MCP Layer** | Connects to SP GA + adds CI tools | Tool registry with 6 callable tools |
 | **Phase 2 — FSM Commander** | Drives investigation loop through 7 states | Structured JSON incident report |
 | **Phase 3 — Evaluator** | Scores runs on 5 dimensions | Terminal table + JSON report |
 
@@ -32,18 +32,18 @@ Meridian is the reasoning layer that sits on top of Splunk's GA MCP server — a
 
 ## Phase 1 — MCP Tool Registry
 
-Splunk's four native tools used as-is. Two Cisco tools added on top:
+SP's four native tools used as-is. Two CI tools added on top:
 
 | Tool | Source | What It Returns |
 |---|---|---|
-| `run_spl_query` | Splunk GA | SPL query results |
-| `generate_spl` | Splunk GA | Optimized SPL from natural language |
-| `search_indexes` | Splunk GA | Available indexes and data sources |
-| `get_knowledge_objects` | Splunk GA | Saved searches, field extractions, lookups |
-| `get_network_topology` | Cisco (Meridian) | Device graph: `device_id`, `interface`, `vlan` relationships |
-| `get_telemetry_metrics` | Cisco (Meridian) | Interface counters: `error_rate`, `drops`, `utilization` per `time_window` |
+| `run_spl_query` | SP GA | SPL query results |
+| `generate_spl` | SP GA | Optimized SPL from natural language |
+| `search_indexes` | SP GA | Available indexes and data sources |
+| `get_knowledge_objects` | SP GA | Saved searches, field extractions, lookups |
+| `get_network_topology` | CI (Meridian) | Device graph: `device_id`, `interface`, `vlan` relationships |
+| `get_telemetry_metrics` | CI (Meridian) | Interface counters: `error_rate`, `drops`, `utilization` per `time_window` |
 
-All tools are stateless — pure request/response. RBAC passthrough: the agent inherits the Splunk user's permissions, no privilege escalation in the tool layer.
+All tools are stateless — pure request/response. RBAC passthrough: the agent inherits the SP user's permissions, no privilege escalation in the tool layer.
 
 ---
 
@@ -71,7 +71,7 @@ IDLE → TRIAGE → INVESTIGATING → HYPOTHESIZING → REMEDIATING → RESOLVED
 
 ### Reference Incident
 
-> "High packet loss on Cisco Catalyst Switch in San Jose — interface GigE0/1"
+> "High packet loss on CI Catalyst Switch in San Jose — interface GigE0/1"
 
 The agent's reasoning chain for this scenario:
 
@@ -102,13 +102,13 @@ The agent's reasoning chain for this scenario:
 
 ### Why FSM Over a Free-Form Agent Loop
 
-On live network infrastructure, an agent that takes an unpredictable path is a liability. The FSM makes every decision visible: operators can see exactly which state the system is in, which transition fired, and why. Splunk's own roadmap presentation (28:10–39:59) describes the journey from "reflex actions" to "autonomous workflows." The FSM is what makes autonomous workflows trustworthy enough to run on production.
+On live network infrastructure, an agent that takes an unpredictable path is a liability. The FSM makes every decision visible: operators can see exactly which state the system is in, which transition fired, and why. SP's own roadmap presentation (28:10–39:59) describes the journey from "reflex actions" to "autonomous workflows." The FSM is what makes autonomous workflows trustworthy enough to run on production.
 
 ---
 
 ## Phase 3 — Agent Interaction Evaluator
 
-Scores runs on five dimensions. Reframes LLM-as-judge as a prototype of Splunk's roadmap item: "Observability for AI agent interactions" (roadmap timestamp: 53:34–54:19).
+Scores runs on five dimensions. Reframes LLM-as-judge as a prototype of SP's roadmap item: "Observability for AI agent interactions" (roadmap timestamp: 53:34–54:19).
 
 ### Two Model Modes Compared
 
@@ -120,7 +120,7 @@ Scores runs on five dimensions. Reframes LLM-as-judge as a prototype of Splunk's
 | Actionability | Hedged, general | Specific device + interface + IP |
 | Implementation | Base model, no constraints | Same model + strict system prompt + Pydantic schema |
 
-**62% token reduction. Zero model change.** The "Cisco-tuned" mode is not a different model — it's the same base LLM with schema enforcement. Prompt engineering + output schemas cut token waste without retraining anything.
+**62% token reduction. Zero model change.** The "CI-tuned" mode is not a different model — it's the same base LLM with schema enforcement. Prompt engineering + output schemas cut token waste without retraining anything.
 
 ### Scoring Dimensions
 
@@ -132,7 +132,7 @@ Scores runs on five dimensions. Reframes LLM-as-judge as a prototype of Splunk's
 | Tool efficiency | Did the agent use the minimum necessary tool calls? |
 | Composite | Weighted combination of the above, configurable per deployment |
 
-At Cisco/Splunk scale — tens of thousands of investigations daily — the difference between 11,000 and 4,200 tokens per run is a real cloud margin problem. Surfacing it in the evaluator makes the business case visible.
+At CI/SP scale — tens of thousands of investigations daily — the difference between 11,000 and 4,200 tokens per run is a real cloud margin problem. Surfacing it in the evaluator makes the business case visible.
 
 ---
 
@@ -148,9 +148,9 @@ All three phases in one terminal dashboard. One incident, full lifecycle:
 │  │ MCP Tool │  │ FSM Incident     │  │ Evaluator │  │
 │  │ Registry │  │ Commander        │  │ Panel     │  │
 │  │          │  │                  │  │           │  │
-│  │ Splunk   │  │ PLAN→ACT→OBSERVE │  │ Score     │  │
+│  │ SP       │  │ PLAN→ACT→OBSERVE │  │ Score     │  │
 │  │ native + │  │ state machine    │  │ Tokens    │  │
-│  │ Cisco    │  │ reasoning trace  │  │ Precision │  │
+│  │ CI       │  │ reasoning trace  │  │ Precision │  │
 │  │ mocked   │  │                  │  │ Recall    │  │
 │  └──────────┘  └──────────────────┘  └───────────┘  │
 └─────────────────────────────────────────────────────┘
@@ -160,12 +160,12 @@ Not three separate scripts — one unified console that shows an incident move f
 
 ---
 
-## What This Addresses on Splunk's Roadmap
+## What This Addresses on SP's Roadmap
 
-| Gap | Splunk's Current State | Meridian |
+| Gap | SP's Current State | Meridian |
 |---|---|---|
 | Orchestration | No agent decides tool sequence | FSM drives Plan → Act → Observe loop |
-| Network context | No Cisco topology or telemetry | `get_network_topology` + `get_telemetry_metrics` |
+| Network context | No CI topology or telemetry | `get_network_topology` + `get_telemetry_metrics` |
 | Decision logic | No threshold-based escalation | FSM transitions with configurable thresholds |
 | Agent observability | Named as a roadmap item — not shipped | Phase 3 Evaluator is a working prototype |
 | Token economics | No cost-aware evaluation | Token cost is a first-class scoring dimension |
@@ -181,7 +181,7 @@ Not three separate scripts — one unified console that shows an incident move f
 | Agent LLM | Claude via Anthropic API | `claude-opus-4-7` for reasoning, `claude-sonnet-4-6` for throughput |
 | FSM | `transitions` | Readable state definitions, auditable transitions |
 | Schema enforcement | `pydantic` | Structured output validation, token reduction |
-| Splunk connection | Local trial → env var swap | `SPLUNK_ENDPOINT` + `SPLUNK_TOKEN` |
+| SP connection | Local trial → env var swap | `SP_ENDPOINT` + `SP_TOKEN` |
 | UI | `rich` | Terminal dashboard, no browser dependency |
 | Lint / types | `ruff` + `mypy` | Enforced on commit |
 | Tests | `pytest` | Unit + integration |
@@ -194,9 +194,9 @@ Not three separate scripts — one unified console that shows an incident move f
 # Install
 pip install -e ".[dev]"
 
-# Configure Splunk connection (or leave in mock mode)
-export SPLUNK_ENDPOINT=https://your-splunk-instance:8089
-export SPLUNK_TOKEN=your-token
+# Configure SP connection (or leave in mock mode)
+export SP_ENDPOINT=https://your-sp-instance:8089
+export SP_TOKEN=your-token
 
 # Configure Claude
 export ANTHROPIC_API_KEY=your-key
@@ -248,10 +248,10 @@ pytest
 ## Out of Scope (v1)
 
 - FSM does not handle truly novel scenarios — those escalate to human-in-the-loop by design
-- OAuth 2.0 is a documented stub — it's on Splunk's roadmap, not Meridian's
-- Splunk trial data is synthetic — the architecture is production-ready, the data is not
-- The "Cisco-tuned" mode is prompt + schema, not a separately trained model
+- OAuth 2.0 is a documented stub — it's on SP's roadmap, not Meridian's
+- SP trial data is synthetic — the architecture is production-ready, the data is not
+- The "CI-tuned" mode is prompt + schema, not a separately trained model
 
 ---
 
-*Built on Splunk's GA MCP server · FSM-driven agentic reasoning · Token cost as a first-class metric*
+*Built on SP's GA MCP server · FSM-driven agentic reasoning · Token cost as a first-class metric*

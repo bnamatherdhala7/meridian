@@ -1,7 +1,7 @@
 {
   "incident_id": "INC-20240214-001",
-  "title": "High packet loss on Cisco Catalyst Switch — San Jose",
-  "description": "High packet loss detected on Cisco Catalyst switch sj-catalyst-01 in San Jose. Interface GigE0/1 is showing elevated error rates starting at approximately 14:30 UTC on 2024-02-14. Downstream services on VLAN 100 are affected.",
+  "title": "High packet loss on CI Catalyst Switch — San Jose",
+  "description": "High packet loss detected on CI Catalyst switch sj-catalyst-01 in San Jose. Interface GigE0/1 is showing elevated error rates starting at approximately 14:30 UTC on 2024-02-14. Downstream services on VLAN 100 are affected.",
   "device": "sj-catalyst-01",
   "interface": "GigE0/1",
   "site": "San Jose",
