@@ -12,29 +12,48 @@ When a network incident fires at 2am, an operator opens SP and stares at a searc
 
 They know the device. They know the interface. But getting from *alert* to *root cause* requires 5–10 manual queries, cross-referencing topology data from CI Catalyst, and then deciding whether to remediate or escalate — all under time pressure.
 
-SP has powerful tools (`run_spl_query`, `get_network_topology`, telemetry metrics). The gap is **the reasoning layer** that connects them: what to query first, how to interpret the results, and when to act.
+Splunk's MCP server ships 14 tools for querying data (`splunk_run_query`, `splunk_get_indexes`, `saia_generate_spl`, and more). Cisco Catalyst Center ships its own separate MCP server for network topology. The gap is **the reasoning layer that connects them**: what to query first, how to interpret the results, and when to act.
 
 ---
 
-## SP MCP — What Exists, What's Missing, What Vigil Adds
+## Splunk MCP — What Exists, What's Missing, What Vigil Adds
 
-| Capability | SP MCP (GA) | Missing | Vigil |
-|---|:---:|:---:|:---:|
-| **Run SPL queries** | ✅ `run_spl_query` | — | Used as-is |
-| **Generate SPL from natural language** | ✅ `generate_spl` | — | Used as-is |
-| **Discover available indexes** | ✅ `search_indexes` | — | Used as-is |
-| **Saved searches / field extractions** | ✅ `get_knowledge_objects` | — | Used as-is |
-| **CI network topology (device graph)** | ❌ | Not in SP MCP | ✅ `get_network_topology` |
-| **CI interface telemetry (error counters)** | ❌ | Not in SP MCP | ✅ `get_telemetry_metrics` |
-| **Decide which tool to call first** | ❌ | No orchestration | ✅ FSM state machine |
-| **State-filtered tool access per phase** | ❌ | Unlimited tool exposure | ✅ Per-state allowlists |
-| **Threshold-based escalation logic** | ❌ | Human judgement only | ✅ `src_ip > 60% egress → ESCALATE` |
-| **Structured JSON incident report** | ❌ | Free-form output | ✅ Pydantic-validated schema |
-| **Token cost measurement per run** | ❌ | Not surfaced | ✅ First-class evaluator metric |
-| **Precision / recall scoring** | ❌ | No ground-truth eval | ✅ Phase 3 Evaluator |
-| **Generic vs. constrained model comparison** | ❌ | Not measured | ✅ Side-by-side comparison |
-| **RBAC passthrough** | ✅ Inherits SP user perms | — | Preserved — no privilege escalation |
-| **OAuth 2.0** | 🗓 On roadmap | Not yet shipped | Documented stub, ready to wire in |
+Splunk's MCP server ([GA, v1.1](https://help.splunk.com/en/splunk-cloud-platform/mcp-server-for-splunk-platform/1.1/mcp-server-tools)) ships **14 tools** across two namespaces: `splunk_*` for platform queries and `saia_*` for AI-assisted SPL. Vigil wraps 4 of those tools and adds everything below the line.
+
+### What Splunk MCP ships (14 tools)
+
+| Tool | What It Does |
+|---|---|
+| `splunk_run_query` | Execute an SPL search and return results |
+| `splunk_get_indexes` | List available indexes |
+| `splunk_get_index_info` | Detailed metadata on a specific index |
+| `splunk_get_info` | Splunk instance info (version, config) |
+| `splunk_get_metadata` | Hosts, sources, and sourcetypes metadata |
+| `splunk_get_user_info` | Authenticated user details |
+| `splunk_get_user_list` | List of all Splunk users |
+| `splunk_get_kv_store_collections` | KV Store collection stats |
+| `splunk_get_knowledge_objects` | Saved searches, field extractions, lookups |
+| `splunk_run_saved_search` | Run a saved search *(beta)* |
+| `saia_generate_spl` | Generate SPL from natural language |
+| `saia_explain_spl` | Explain an SPL query in plain English |
+| `saia_optimize_spl` | Optimize an SPL query for performance |
+| `saia_ask_splunk_question` | Answer conceptual questions about SPL |
+
+### What's missing — and what Vigil builds on top
+
+| Capability | Splunk MCP | Gap | Vigil |
+|---|:---:|---|:---:|
+| **CI network topology** (device graph, uplinks, VLANs) | ❌ | Cisco Catalyst data lives in a separate MCP server — no bridge to Splunk | ✅ `get_network_topology` |
+| **CI interface telemetry** (error counters, utilization, drops) | ❌ | `splunk_run_query` can query telemetry *if indexed*, but no typed tool exists | ✅ `get_telemetry_metrics` |
+| **Orchestration — which tool to call first** | ❌ | All 14 tools are exposed simultaneously; no guidance on sequence or phase | ✅ FSM drives TRIAGE → INVESTIGATING → HYPOTHESIZING |
+| **State-filtered tool access** | ❌ | LLM sees all tools in every turn — wastes tokens, risks wrong calls | ✅ Per-state allowlists; tool list changes each FSM phase |
+| **Threshold-based escalation** | ❌ | No decision rules shipped | ✅ `src_ip > 60% egress → ESCALATING` (configurable) |
+| **Structured JSON incident report** | ❌ | Output is free-form text | ✅ Pydantic-validated schema |
+| **Token cost per run** | ❌ | Not measured or surfaced | ✅ First-class evaluator metric |
+| **Precision / recall scoring** | ❌ | No ground-truth eval framework | ✅ Phase 3 Evaluator |
+| **Generic vs. constrained model comparison** | ❌ | Not measured | ✅ Side-by-side, same model two ways |
+| **RBAC passthrough** | ✅ | — | Preserved — no privilege escalation added |
+| **OAuth 2.0** | 🗓 Roadmap | Not yet shipped | Stub documented, ready to wire in |
 
 ---
 
@@ -70,7 +89,7 @@ The React frontend streams live events from the investigation as it runs — FSM
 
 | Phase | What It Does | Output |
 |---|---|---|
-| **Phase 1 — MCP Layer** | Connects to SP GA's 4 native tools + adds 2 CI extensions | 6 callable tools, RBAC passthrough |
+| **Phase 1 — MCP Layer** | Wraps 4 Splunk MCP tools + adds 2 CI extensions not in Splunk MCP | 6 callable tools, RBAC passthrough |
 | **Phase 2 — FSM Commander** | Claude drives a Plan→Act→Observe loop through 7 states | Structured JSON incident report |
 | **Phase 3 — Evaluator** | Scores runs on precision, recall, token cost, tool efficiency | Side-by-side generic vs. constrained comparison |
 
@@ -87,8 +106,8 @@ IDLE → TRIAGE → INVESTIGATING → HYPOTHESIZING → REMEDIATING → RESOLVED
 
 | State | What Claude Can Call | Decision Rule |
 |---|---|---|
-| TRIAGE | `search_indexes`, `get_network_topology` | Confirm data sources + device role |
-| INVESTIGATING | `get_telemetry_metrics`, `run_spl_query` | Gather error counters + traffic data |
+| TRIAGE | `splunk_get_indexes`, `get_network_topology` | Confirm data sources + device role |
+| INVESTIGATING | `get_telemetry_metrics`, `splunk_run_query` | Gather error counters + traffic data |
 | HYPOTHESIZING | *(no tools)* | Form hypothesis from evidence |
 | REMEDIATING | *(no tools)* | Execute known-safe fix |
 | ESCALATING | *(no tools)* | Single IP >60% egress, or ambiguous data |
@@ -105,11 +124,11 @@ IDLE → TRIAGE → INVESTIGATING → HYPOTHESIZING → REMEDIATING → RESOLVED
 The agent's reasoning chain:
 
 ```
-1. search_indexes      → confirms network_telemetry, netflow, security_events available     [145ms]
+1. splunk_get_indexes   → confirms network_telemetry, netflow, security_events available   [145ms]
 2. get_network_topology → sj-catalyst-01 uplinks to sj-core-01, GigE0/1 on vlan=100       [118ms]
 3. get_telemetry_metrics → out_errors=2847, utilization=94.2%, drops=1203 ⚠               [287ms]
-4. run_spl_query (errors) → avg out_errors=2847.3/min, spike started 14:30 UTC ⚠          [421ms]
-5. run_spl_query (egress) → src_ip 10.14.22.87 = 71.2% of egress (threshold: 60%) ⚠      [389ms]
+4. splunk_run_query (errors) → avg out_errors=2847.3/min, spike started 14:30 UTC ⚠       [421ms]
+5. splunk_run_query (egress) → src_ip 10.14.22.87 = 71.2% of egress (threshold: 60%) ⚠   [389ms]
                                                                                             ─────
 FSM decision: single IP > 60% → ESCALATING (confidence 0.93)                        total: ~18s
 ```
@@ -181,15 +200,15 @@ python -m phase2_agent.commander --scenario phase2_agent/scenarios/packet_loss_s
 
 ---
 
-## What This Addresses on SP's Roadmap
+## What This Addresses on Splunk's Roadmap
 
-| Gap | Today | Vigil |
+| Gap | Splunk MCP Today | Vigil |
 |---|---|---|
-| Orchestration layer | Operators manually chain queries | FSM drives tool sequence automatically |
-| Network context | SP has no CI topology or telemetry | `get_network_topology` + `get_telemetry_metrics` CI extensions |
-| Escalation logic | Human judgement, ad-hoc | Configurable thresholds (>60% egress → ESCALATING) |
-| Agent observability | Not yet shipped | Phase 3 Evaluator is a working prototype |
-| Token economics | Not measured | First-class scoring dimension, shown per run |
+| Orchestration layer | 14 tools exposed with no sequence guidance — LLM decides freely | FSM enforces TRIAGE → INVESTIGATING → HYPOTHESIZING order |
+| CI network context | Not in Splunk MCP — lives in a separate Catalyst Center MCP server | `get_network_topology` + `get_telemetry_metrics` bridge the gap |
+| Escalation logic | No decision rules — human judgement only | Configurable thresholds (`src_ip > 60% egress → ESCALATING`) |
+| Agent observability | Not shipped (named on roadmap) | Phase 3 Evaluator is a working prototype |
+| Token economics | Not measured or surfaced | First-class scoring dimension, shown per run |
 
 ---
 
