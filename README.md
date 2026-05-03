@@ -16,6 +16,28 @@ SP has powerful tools (`run_spl_query`, `get_network_topology`, telemetry metric
 
 ---
 
+## SP MCP — What Exists, What's Missing, What Vigil Adds
+
+| Capability | SP MCP (GA) | Missing | Vigil |
+|---|:---:|:---:|:---:|
+| **Run SPL queries** | ✅ `run_spl_query` | — | Used as-is |
+| **Generate SPL from natural language** | ✅ `generate_spl` | — | Used as-is |
+| **Discover available indexes** | ✅ `search_indexes` | — | Used as-is |
+| **Saved searches / field extractions** | ✅ `get_knowledge_objects` | — | Used as-is |
+| **CI network topology (device graph)** | ❌ | Not in SP MCP | ✅ `get_network_topology` |
+| **CI interface telemetry (error counters)** | ❌ | Not in SP MCP | ✅ `get_telemetry_metrics` |
+| **Decide which tool to call first** | ❌ | No orchestration | ✅ FSM state machine |
+| **State-filtered tool access per phase** | ❌ | Unlimited tool exposure | ✅ Per-state allowlists |
+| **Threshold-based escalation logic** | ❌ | Human judgement only | ✅ `src_ip > 60% egress → ESCALATE` |
+| **Structured JSON incident report** | ❌ | Free-form output | ✅ Pydantic-validated schema |
+| **Token cost measurement per run** | ❌ | Not surfaced | ✅ First-class evaluator metric |
+| **Precision / recall scoring** | ❌ | No ground-truth eval | ✅ Phase 3 Evaluator |
+| **Generic vs. constrained model comparison** | ❌ | Not measured | ✅ Side-by-side comparison |
+| **RBAC passthrough** | ✅ Inherits SP user perms | — | Preserved — no privilege escalation |
+| **OAuth 2.0** | 🗓 On roadmap | Not yet shipped | Documented stub, ready to wire in |
+
+---
+
 ## What Vigil Does
 
 One incident in. Structured decision out.
