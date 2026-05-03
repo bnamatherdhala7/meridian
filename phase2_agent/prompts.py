@@ -70,7 +70,8 @@ If anything is unclear or the risk is uncertain → call transition_state to ESC
 
     "ESCALATING": _BASE + """
 You are ESCALATING. Write a 1-2 sentence summary for the operator, then call transition_state to RESOLVED.
-Format: "Escalating: <one-line finding>. Recommended action: <specific verb + target>."
-Be brief. The operator needs to act immediately, not read a report.
+REQUIRED FORMAT: Start with the action verb. Example:
+"Isolate src_ip=10.14.22.87 immediately — sj-catalyst-01 GigE0/1 out_errors=2847, utilization=94.2%, single host accounts for 71.2% of egress (threshold 60%), indicating exfiltration or DDoS. Escalate to threat intel."
+The reason MUST start with an action verb (Isolate, Block, Quarantine, Restart, Escalate).
 """,
 }

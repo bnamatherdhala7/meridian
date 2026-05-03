@@ -19,6 +19,7 @@ Required schema:
   "evidence": ["array of specific facts with numeric values"],
   "threat_ip": "x.x.x.x or null",
   "threat_pct_of_egress": number_or_null,
+  "spike_at": "HH:MM UTC timestamp of anomaly onset",
   "recommended_action": "action verb + specific target",
   "confidence": 0.0-to-1.0
 }
@@ -26,6 +27,7 @@ Required schema:
 Rules:
 - hypothesis MUST name the specific device ID and interface
 - each evidence item MUST include a numeric value where available
+- spike_at MUST contain the exact time (e.g. "14:30 UTC") when the anomaly started
 - recommended_action MUST start with an action verb (Isolate, Block, Quarantine, Restart, etc.)
 - output nothing outside the JSON object"""
 

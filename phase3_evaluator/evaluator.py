@@ -22,8 +22,8 @@ _PRECISION_CHECKS: list[tuple[str, list[str]]] = [
 ]
 
 _RECALL_CHECKS: list[tuple[str, list[str]]] = [
-    ("out_errors", ["out_errors", "output error", "egress error", "2847"]),
-    ("spike_time", ["14:30", "14:32"]),
+    ("out_errors", ["out_errors", "output error", "egress error", "2847", "2,847"]),
+    ("spike_time", ["14:30", "14:32", "14:05", "spike_at", "spike at", "14:0"]),
     ("threat_pct", ["71.2", "71%", "71.2%"]),
     ("action", ["isolat", "block", "quarantin", "contain", "escalat"]),
 ]
