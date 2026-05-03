@@ -1,5 +1,5 @@
-import { useCallback, useReducer, useRef } from 'react'
-import type { AppStatus, EvalResults, FSMState, IncidentReport, SSEEvent, ToolCall } from './types'
+import { useCallback, useReducer, useRef, useState } from 'react'
+import type { AppStatus, EvalResults, FSMState, IncidentReport, ScenarioMeta, SSEEvent, ToolCall } from './types'
 import FSMDiagram from './components/FSMDiagram'
 import ToolCallFeed from './components/ToolCallFeed'
 import EvidencePanel from './components/EvidencePanel'
@@ -80,9 +80,47 @@ const STATUS_LABEL: Record<AppStatus, string> = {
   error: 'Error',
 }
 
+const SCENARIOS: ScenarioMeta[] = [
+  {
+    id: 'packet_loss',
+    label: 'Packet Loss',
+    incident_id: 'INC-20240214-001',
+    severity: 'P2',
+    site: 'San Jose',
+    title: 'High packet loss on sj-catalyst-01 / GigE0/1',
+    expected_path: 'ESCALATING',
+  },
+  {
+    id: 'bgp_flap',
+    label: 'BGP Flap',
+    incident_id: 'INC-20240215-002',
+    severity: 'P2',
+    site: 'San Jose',
+    title: 'BGP peer flapping on sj-edge-01 / GigE0/0',
+    expected_path: 'REMEDIATING',
+  },
+  {
+    id: 'cpu_spike',
+    label: 'CPU Spike',
+    incident_id: 'INC-20240215-003',
+    severity: 'P1',
+    site: 'San Jose',
+    title: 'CPU 94% on sj-core-01, BGP/STP degraded',
+    expected_path: 'ESCALATING',
+  },
+]
+
+const PATH_COLOR: Record<string, string> = {
+  ESCALATING: 'var(--orange)',
+  REMEDIATING: 'var(--green)',
+}
+
 export default function App() {
   const [state, dispatch] = useReducer(reducer, INITIAL)
+  const [scenarioId, setScenarioId] = useState<string>('packet_loss')
   const esRef = useRef<EventSource | null>(null)
+
+  const selectedScenario = SCENARIOS.find(s => s.id === scenarioId) ?? SCENARIOS[0]
 
   const startInvestigation = useCallback(() => {
     if (esRef.current) {
@@ -93,7 +131,7 @@ export default function App() {
     dispatch({ type: 'RESET' })
 
     let toolCallSeq = 0
-    const es = new EventSource('/api/run')
+    const es = new EventSource(`/api/run?scenario=${scenarioId}`)
     esRef.current = es
 
     es.onmessage = (e: MessageEvent) => {
@@ -141,9 +179,17 @@ export default function App() {
       es.close()
       esRef.current = null
     }
-  }, [])
+  }, [scenarioId])
+
+  const handleScenarioChange = useCallback((id: string) => {
+    if (state.status === 'running' || state.status === 'evaluating') return
+    setScenarioId(id)
+    dispatch({ type: 'RESET' })
+    dispatch({ type: 'SET_STATUS', status: 'idle' })
+  }, [state.status])
 
   const { status, fsmState, fsmHistory, toolCalls, evidence, totalTokens, report, evalResults, error } = state
+  const busy = status === 'running' || status === 'evaluating'
 
   return (
     <>
@@ -151,12 +197,38 @@ export default function App() {
       <header className="app-header">
         <span className="wordmark">VIGIL</span>
         <div className="header-divider" />
-        <div className="header-incident">
-          <span className="header-incident-id">INC-20240214-001 · P2 · San Jose</span>
-          <span className="header-incident-title">
-            High packet loss on Cisco Catalyst sj-catalyst-01 / GigE0/1
-          </span>
+
+        {/* Scenario selector */}
+        <div className="scenario-tabs">
+          {SCENARIOS.map(s => (
+            <button
+              key={s.id}
+              className={`scenario-tab${scenarioId === s.id ? ' active' : ''}`}
+              onClick={() => handleScenarioChange(s.id)}
+              disabled={busy}
+              title={s.title}
+            >
+              <span className={`scenario-tab-severity sev-${s.severity.toLowerCase()}`}>{s.severity}</span>
+              {s.label}
+              <span
+                className="scenario-tab-path"
+                style={{ color: PATH_COLOR[s.expected_path] ?? 'var(--subtle)' }}
+              >
+                → {s.expected_path}
+              </span>
+            </button>
+          ))}
         </div>
+
+        <div className="header-divider" />
+
+        <div className="header-incident">
+          <span className="header-incident-id">
+            {selectedScenario.incident_id} · {selectedScenario.severity} · {selectedScenario.site}
+          </span>
+          <span className="header-incident-title">{selectedScenario.title}</span>
+        </div>
+
         <div className="header-right">
           {totalTokens > 0 && (
             <span className="header-tokens">
@@ -167,10 +239,10 @@ export default function App() {
           <button
             className="btn-run"
             onClick={startInvestigation}
-            disabled={status === 'running' || status === 'evaluating'}
+            disabled={busy}
             aria-label="Run investigation"
           >
-            {status === 'running' || status === 'evaluating' ? 'Running…' : 'Run Investigation'}
+            {busy ? 'Running…' : 'Run Investigation'}
           </button>
         </div>
       </header>

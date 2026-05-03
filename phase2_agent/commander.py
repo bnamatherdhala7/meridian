@@ -13,6 +13,8 @@ from phase1_mcp.tools.ci import get_network_topology, get_telemetry_metrics
 from phase1_mcp.tools.sp import (
     generate_spl,
     get_knowledge_objects,
+    get_metadata,
+    get_user_context,
     run_spl_query,
     search_indexes,
 )
@@ -22,7 +24,7 @@ from phase2_agent.states import STATES, TRANSITIONS, VALID_TRANSITIONS
 _TOOL_DEFINITIONS: list[dict] = [
     {
         "name": "run_spl_query",
-        "description": "Execute an SPL query against SP. Returns matching events and statistics.",
+        "description": "Execute an SPL query against Splunk (splunk_run_query). Returns matching events and statistics.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -35,7 +37,7 @@ _TOOL_DEFINITIONS: list[dict] = [
     },
     {
         "name": "generate_spl",
-        "description": "Generate an optimized SPL query from a natural language description.",
+        "description": "Generate an optimized SPL query from a natural language description (saia_generate_spl).",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -47,7 +49,7 @@ _TOOL_DEFINITIONS: list[dict] = [
     },
     {
         "name": "search_indexes",
-        "description": "Discover available SP indexes and their metadata.",
+        "description": "Discover available Splunk indexes and their metadata (splunk_get_indexes).",
         "input_schema": {
             "type": "object",
             "properties": {"query": {"type": "string"}},
@@ -55,15 +57,37 @@ _TOOL_DEFINITIONS: list[dict] = [
     },
     {
         "name": "get_knowledge_objects",
-        "description": "Surface saved searches, field extractions, and lookups from SP.",
+        "description": "Surface saved searches, field extractions, and lookups from Splunk (splunk_get_knowledge_objects).",
         "input_schema": {
             "type": "object",
             "properties": {"object_type": {"type": "string"}},
         },
     },
     {
+        "name": "get_metadata",
+        "description": "Discover which hosts are generating events in Splunk indexes (splunk_get_metadata). Use in TRIAGE to identify which devices have active alerts.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "index": {"type": "string", "description": "Index to query (default: *)"},
+                "metadata_type": {"type": "string", "description": "hosts, sources, or sourcetypes"},
+            },
+        },
+    },
+    {
+        "name": "get_user_context",
+        "description": "Check if a suspect src_ip belongs to a known corporate user (splunk_get_user_info). Use during INVESTIGATING when a single IP shows anomalous traffic.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "src_ip": {"type": "string", "description": "IP address to look up"},
+                "username": {"type": "string", "description": "Optional username to look up"},
+            },
+        },
+    },
+    {
         "name": "get_network_topology",
-        "description": "Get CI Catalyst network topology — device graph and links.",
+        "description": "Get CI Catalyst network topology — device graph, uplinks, VLANs, and blast radius.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -74,7 +98,7 @@ _TOOL_DEFINITIONS: list[dict] = [
     },
     {
         "name": "get_telemetry_metrics",
-        "description": "Get real-time interface-level telemetry metrics from a CI device.",
+        "description": "Get real-time interface-level and device-level telemetry from a CI Catalyst device. Omit interface to get CPU/memory device metrics.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -92,15 +116,17 @@ _TOOL_FUNCTIONS: dict[str, Any] = {
     "generate_spl": generate_spl,
     "search_indexes": search_indexes,
     "get_knowledge_objects": get_knowledge_objects,
+    "get_metadata": get_metadata,
+    "get_user_context": get_user_context,
     "get_network_topology": get_network_topology,
     "get_telemetry_metrics": get_telemetry_metrics,
 }
 
 # Tools available per state — Claude can only call what's relevant
 _STATE_TOOL_ALLOWLIST: dict[str, list[str]] = {
-    "TRIAGE":        ["search_indexes", "get_network_topology"],
-    "INVESTIGATING": ["get_telemetry_metrics", "run_spl_query"],
-    "HYPOTHESIZING": ["run_spl_query"],
+    "TRIAGE":        ["search_indexes", "get_metadata", "get_network_topology"],
+    "INVESTIGATING": ["get_telemetry_metrics", "run_spl_query", "get_user_context"],
+    "HYPOTHESIZING": [],
     "REMEDIATING":   [],
     "ESCALATING":    [],
 }
@@ -209,16 +235,12 @@ class IncidentCommander:
         reason = inp.get("reason", "")
         conf = float(inp.get("confidence", 0.5))
 
-        from_state = self.state  # capture before FSM trigger mutates self.state
-
         trigger = _FSM_TRIGGER.get(next_state)
         if trigger:
             getattr(self, trigger)()
 
         self.hypothesis = reason
         self.confidence = conf
-        # Add evidence only on final decisions (→ ESCALATING or → REMEDIATING)
-        # This excludes intermediate TRIAGE→INVESTIGATING and INVESTIGATING→HYPOTHESIZING noise
         if reason and next_state in ("ESCALATING", "REMEDIATING"):
             self.evidence.append(reason)
         if next_state in ("ESCALATING", "REMEDIATING") and not self.recommended_action:

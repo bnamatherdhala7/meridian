@@ -222,6 +222,64 @@ html, body {
   color: var(--muted);
 }
 
+/* ── Scenario Tabs ───────────────────────────────────────────────────── */
+.scenario-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.scenario-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--subtle);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.scenario-tab:hover:not(:disabled) {
+  border-color: var(--border-md);
+  color: var(--text);
+  background: rgba(255,255,255,0.04);
+}
+
+.scenario-tab.active {
+  border-color: rgba(255,224,27,0.4);
+  color: var(--brand);
+  background: rgba(255,224,27,0.06);
+}
+
+.scenario-tab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.scenario-tab-severity {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.sev-p1 { background: rgba(239,68,68,0.2); color: var(--red); }
+.sev-p2 { background: rgba(245,158,11,0.2); color: var(--amber); }
+
+.scenario-tab-path {
+  font-size: 8px;
+  opacity: 0.7;
+}
+
 /* ── Card ────────────────────────────────────────────────────────────── */
 .card {
   background: var(--card);

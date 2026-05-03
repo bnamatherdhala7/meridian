@@ -1,0 +1,21 @@
+{
+  "incident_id": "INC-20240215-002",
+  "title": "BGP peer session flapping — San Jose WAN edge",
+  "description": "BGP peer session between sj-edge-01 and upstream ISP (upstream-isp-01) has been flapping for the past 25 minutes. 23 BGP session drops recorded since 14:05 UTC. Partial route table withdrawals are causing intermittent connectivity loss to external destinations from the San Jose site.",
+  "device": "sj-edge-01",
+  "interface": "GigE0/0",
+  "site": "San Jose",
+  "vlan": null,
+  "reported_at": "2024-02-15T14:30:00Z",
+  "severity": "P2",
+  "ground_truth": {
+    "anomalous_device": "sj-edge-01",
+    "anomalous_interface": "GigE0/0",
+    "error_type": "mtu_mismatch",
+    "spike_time": "2024-02-15T14:05:00Z",
+    "root_cause": "MTU mismatch: sj-edge-01 GigE0/0 negotiated 1500, ISP expects 1480 (MPLS overhead)",
+    "expected_final_state": "REMEDIATING",
+    "expected_tool_calls": 5,
+    "safe_remediation": "ip mtu 1480 on GigE0/0"
+  }
+}

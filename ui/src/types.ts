@@ -48,6 +48,16 @@ export interface EvalResults {
   token_savings_pct: number
 }
 
+export interface ScenarioMeta {
+  id: string
+  label: string
+  incident_id: string
+  severity: string
+  site: string
+  title: string
+  expected_path: string
+}
+
 export type AppStatus = 'idle' | 'running' | 'evaluating' | 'done' | 'error'
 
 export type SSEEvent =

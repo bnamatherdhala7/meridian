@@ -1,4 +1,7 @@
-"""Mocked CI network topology and telemetry tools."""
+"""Mocked CI network topology and telemetry tools.
+
+Maps to Cisco Catalyst Center MCP server (separate from Splunk MCP).
+"""
 import time
 from typing import Any
 
@@ -22,10 +25,26 @@ _TOPOLOGY: dict[str, Any] = {
             "role": "core",
             "interfaces": ["TenGigE1/1", "TenGigE1/2", "FortyGigE1/1"],
             "uplinks": ["sj-wan-01"],
+            "downstream_devices": ["sj-catalyst-01"],
+            "blast_radius": "All San Jose access layer",
+        },
+        {
+            "device_id": "sj-edge-01",
+            "hostname": "sj-edge-01.corp.local",
+            "model": "ASR 1001-X",
+            "site": "San Jose",
+            "role": "wan_edge",
+            "interfaces": ["GigE0/0", "GigE0/1", "TenGigE0/0/0"],
+            "uplinks": ["upstream-isp-01"],
+            "bgp_peers": [{"peer_ip": "203.0.113.1", "peer_as": 64500, "peer_name": "upstream-isp-01"}],
+            "downstream_devices": ["sj-core-01"],
         },
     ],
     "links": [
         {"from": "sj-catalyst-01:TenGigE1/1", "to": "sj-core-01:TenGigE1/1", "bandwidth_gbps": 10},
+        {"from": "sj-core-01:FortyGigE1/1", "to": "sj-edge-01:TenGigE0/0/0", "bandwidth_gbps": 40},
+        {"from": "sj-edge-01:GigE0/0", "to": "upstream-isp-01:GigE0/0", "bandwidth_gbps": 1,
+         "link_type": "wan_mpls"},
     ],
 }
 
@@ -40,13 +59,48 @@ _TELEMETRY: dict[str, Any] = {
             "in_errors": 0, "out_errors": 3, "drops": 1,
             "utilization_pct": 12.4, "speed_mbps": 1000, "status": "up",
         },
-        "GigE0/3": {
-            "in_errors": 0, "out_errors": 1, "drops": 0,
-            "utilization_pct": 8.1, "speed_mbps": 1000, "status": "up",
-        },
         "TenGigE1/1": {
             "in_errors": 0, "out_errors": 0, "drops": 0,
             "utilization_pct": 44.8, "speed_mbps": 10000, "status": "up",
+        },
+    },
+    "sj-edge-01": {
+        "GigE0/0": {
+            "in_errors": 0, "out_errors": 0, "drops": 847,
+            "utilization_pct": 38.2, "speed_mbps": 1000, "status": "up",
+            "crc_errors": 1203, "mtu": 1500,
+            "bgp_session_state": "Idle",
+            "bgp_flap_count": 23,
+            "note": "Frequent drops with CRC errors — consistent with MTU mismatch on WAN link",
+        },
+        "GigE0/1": {
+            "in_errors": 0, "out_errors": 0, "drops": 0,
+            "utilization_pct": 8.1, "speed_mbps": 1000, "status": "up",
+        },
+        "TenGigE0/0/0": {
+            "in_errors": 0, "out_errors": 0, "drops": 0,
+            "utilization_pct": 44.8, "speed_mbps": 10000, "status": "up",
+        },
+    },
+    "sj-core-01": {
+        "_device_metrics": {
+            "cpu_pct": 94.1, "memory_pct": 89.3,
+            "cpu_spike_at": "2024-02-15T14:54:00Z",
+            "bgp_status": "degraded", "stp_status": "degraded",
+            "anomaly": True,
+            "note": "CPU 94% — BGP and STP convergence degraded. All downstream devices affected.",
+        },
+        "TenGigE1/1": {
+            "in_errors": 0, "out_errors": 0, "drops": 1847,
+            "utilization_pct": 67.2, "speed_mbps": 10000, "status": "up",
+        },
+        "TenGigE1/2": {
+            "in_errors": 0, "out_errors": 0, "drops": 923,
+            "utilization_pct": 54.1, "speed_mbps": 10000, "status": "up",
+        },
+        "FortyGigE1/1": {
+            "in_errors": 0, "out_errors": 0, "drops": 0,
+            "utilization_pct": 41.3, "speed_mbps": 40000, "status": "up",
         },
     },
 }
@@ -69,14 +123,34 @@ def get_telemetry_metrics(
 ) -> dict[str, Any]:
     time.sleep(0.287)
     device = _TELEMETRY.get(device_id, {})
-    if interface:
-        metrics = device.get(interface, {})
-        anomaly = metrics.get("out_errors", 0) > 500 or metrics.get("utilization_pct", 0) > 90
+
+    # Device-level metrics (CPU, memory) returned when no interface specified
+    if not interface:
+        device_metrics = device.get("_device_metrics", {})
+        interfaces = {k: v for k, v in device.items() if k != "_device_metrics"}
+        anomaly = device_metrics.get("anomaly", False) or any(
+            iface.get("out_errors", 0) > 500 or iface.get("utilization_pct", 0) > 90
+            for iface in interfaces.values()
+        )
         return {
             "device_id": device_id,
-            "interface": interface,
             "time_window": time_window,
-            "metrics": metrics,
+            "device_metrics": device_metrics,
+            "interfaces": interfaces,
             "anomaly": anomaly,
         }
-    return {"device_id": device_id, "time_window": time_window, "interfaces": device}
+
+    metrics = device.get(interface, {})
+    anomaly = (
+        metrics.get("out_errors", 0) > 500
+        or metrics.get("utilization_pct", 0) > 90
+        or metrics.get("bgp_flap_count", 0) > 5
+        or metrics.get("crc_errors", 0) > 500
+    )
+    return {
+        "device_id": device_id,
+        "interface": interface,
+        "time_window": time_window,
+        "metrics": metrics,
+        "anomaly": anomaly,
+    }

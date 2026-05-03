@@ -1,0 +1,21 @@
+{
+  "incident_id": "INC-20240215-003",
+  "title": "CPU spike on core distribution switch — San Jose",
+  "description": "sj-core-01 (Catalyst 9500, San Jose core) is reporting sustained CPU utilization of 94% for the past 18 minutes. BGP and STP convergence are degraded. All downstream access switches (including sj-catalyst-01) uplink through this device. Root cause is unknown — no recent config changes logged.",
+  "device": "sj-core-01",
+  "interface": "all",
+  "site": "San Jose",
+  "vlan": null,
+  "reported_at": "2024-02-15T15:12:00Z",
+  "severity": "P1",
+  "ground_truth": {
+    "anomalous_device": "sj-core-01",
+    "anomalous_interface": "all",
+    "error_type": "cpu_spike",
+    "spike_time": "2024-02-15T14:54:00Z",
+    "root_cause": "Unknown process pid=14847 consuming 24% CPU, identity unresolved",
+    "expected_final_state": "ESCALATING",
+    "expected_tool_calls": 5,
+    "blast_radius": "All downstream devices in San Jose site"
+  }
+}

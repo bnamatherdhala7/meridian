@@ -9,7 +9,9 @@ const TOOL_BADGE: Record<string, string> = {
   run_spl_query: 'sp',
   search_indexes: 'sp',
   get_knowledge_objects: 'sp',
-  generate_spl: 'generate',
+  generate_spl: 'sp',
+  get_metadata: 'sp',
+  get_user_context: 'sp',
   get_network_topology: 'ci',
   get_telemetry_metrics: 'ci',
 }
@@ -19,6 +21,8 @@ const TOOL_LABEL: Record<string, string> = {
   search_indexes: 'search_idx',
   get_knowledge_objects: 'knowledge',
   generate_spl: 'gen_spl',
+  get_metadata: 'metadata',
+  get_user_context: 'user_ctx',
   get_network_topology: 'topology',
   get_telemetry_metrics: 'telemetry',
 }

@@ -18,7 +18,7 @@ if _env_path.exists():
             _k, _, _v = _line.partition("=")
             os.environ.setdefault(_k.strip(), _v.strip())
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -34,14 +34,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-_SCENARIO = json.loads(
-    (Path(__file__).parent.parent / "phase2_agent/scenarios/packet_loss_sj.json").read_text()
-)
+_SCENARIOS_DIR = Path(__file__).parent.parent / "phase2_agent/scenarios"
+
+_SCENARIO_REGISTRY: dict[str, dict] = {
+    "packet_loss": json.loads((_SCENARIOS_DIR / "packet_loss_sj.json").read_text()),
+    "bgp_flap":    json.loads((_SCENARIOS_DIR / "bgp_flap_sj.json").read_text()),
+    "cpu_spike":   json.loads((_SCENARIOS_DIR / "cpu_spike_sj.json").read_text()),
+}
+
+_SCENARIO_META = {
+    "packet_loss": {
+        "id": "packet_loss",
+        "label": "Packet Loss",
+        "incident_id": "INC-20240214-001",
+        "severity": "P2",
+        "site": "San Jose",
+        "title": "High packet loss on sj-catalyst-01 / GigE0/1",
+        "expected_path": "ESCALATING",
+    },
+    "bgp_flap": {
+        "id": "bgp_flap",
+        "label": "BGP Flap",
+        "incident_id": "INC-20240215-002",
+        "severity": "P2",
+        "site": "San Jose",
+        "title": "BGP peer flapping on sj-edge-01 / GigE0/0",
+        "expected_path": "REMEDIATING",
+    },
+    "cpu_spike": {
+        "id": "cpu_spike",
+        "label": "CPU Spike",
+        "incident_id": "INC-20240215-003",
+        "severity": "P1",
+        "site": "San Jose",
+        "title": "CPU 94% on sj-core-01, BGP/STP degraded",
+        "expected_path": "ESCALATING",
+    },
+}
 
 
 def _result_preview(tool: str, result: dict) -> str:
-    """Produce a short, human-readable summary of a tool result."""
-    if tool == "run_spl_query":
+    if tool in ("run_spl_query",):
         stats = result.get("stats", {})
         if "avg_out_errors" in stats:
             return (
@@ -51,6 +84,14 @@ def _result_preview(tool: str, result: dict) -> str:
             )
         if "top_src" in stats:
             return f"top_src={stats['top_src']}  pct={stats.get('top_src_pct')}%  {stats.get('anomaly','')}"
+        if "flap_count" in stats:
+            return f"flap_count={stats['flap_count']}  peer={stats.get('peer_ip','')}  {stats.get('note','')[:60]}"
+        if "safe_fix" in stats:
+            return f"{stats.get('cause','')[:60]}  fix={stats.get('safe_fix','')[:40]}"
+        if "avg_cpu_pct" in stats:
+            return f"avg_cpu={stats['avg_cpu_pct']}%  spike_at={stats.get('spike_at','')}  {stats.get('note','')[:50]}"
+        if "top_process" in stats:
+            return f"top_process={stats['top_process']}  unknown_pid={stats.get('unknown_pid','')}  pct={stats.get('unknown_pct','')}%"
         return stats.get("message", "no events")
     if tool == "generate_spl":
         return result.get("spl", "")[:120]
@@ -58,9 +99,20 @@ def _result_preview(tool: str, result: dict) -> str:
         return f"{result.get('total', 0)} indexes available"
     if tool == "get_knowledge_objects":
         return f"{result.get('total', 0)} objects"
+    if tool == "get_metadata":
+        hosts = result.get("hosts", [])
+        alerts = [h["host"] for h in hosts if h.get("alert")]
+        return f"{result.get('total_hosts', 0)} hosts" + (f" — alerts: {', '.join(alerts)}" if alerts else "")
+    if tool == "get_user_context":
+        if not result.get("is_known"):
+            return f"{result.get('src_ip','')} — UNKNOWN: {result.get('threat_intel','')[:60]}"
+        return f"{result.get('src_ip','')} → {result.get('username','')} ({result.get('department','')})"
     if tool == "get_network_topology":
         return f"{result.get('total_devices', 0)} device(s)"
     if tool == "get_telemetry_metrics":
+        dm = result.get("device_metrics", {})
+        if dm:
+            return f"cpu={dm.get('cpu_pct','?')}%  mem={dm.get('memory_pct','?')}%  anomaly={result.get('anomaly')}"
         m = result.get("metrics", {})
         if m:
             return (
@@ -76,16 +128,26 @@ def _is_anomaly(tool: str, result: dict) -> bool:
         return bool(result.get("stats", {}).get("anomaly"))
     if tool == "get_telemetry_metrics":
         return bool(result.get("anomaly"))
+    if tool == "get_metadata":
+        return any(h.get("alert") for h in result.get("hosts", []))
+    if tool == "get_user_context":
+        return not result.get("is_known", True)
     return False
 
 
+@app.get("/api/scenarios")
+async def list_scenarios() -> dict:
+    return {"scenarios": list(_SCENARIO_META.values())}
+
+
 @app.get("/api/scenario")
-async def get_scenario() -> dict:
-    return _SCENARIO
+async def get_scenario(scenario: str = Query(default="packet_loss")) -> dict:
+    return _SCENARIO_REGISTRY.get(scenario, _SCENARIO_REGISTRY["packet_loss"])
 
 
 @app.get("/api/run")
-async def run_investigation() -> StreamingResponse:
+async def run_investigation(scenario: str = Query(default="packet_loss")) -> StreamingResponse:
+    selected = _SCENARIO_REGISTRY.get(scenario, _SCENARIO_REGISTRY["packet_loss"])
     q: queue.Queue[dict | None] = queue.Queue()
 
     def background() -> None:
@@ -114,7 +176,7 @@ async def run_investigation() -> StreamingResponse:
                 })
 
         try:
-            report = commander.run(_SCENARIO, callback=on_event)
+            report = commander.run(selected, callback=on_event)
             q.put({
                 "type": "report",
                 "data": {
@@ -164,7 +226,6 @@ _dist = Path(__file__).parent.parent / "ui/dist"
 if _dist.exists():
     from fastapi.responses import FileResponse
 
-    # Serve static assets at /assets so API routes at /api/* take priority
     app.mount("/assets", StaticFiles(directory=str(_dist / "assets")), name="assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
