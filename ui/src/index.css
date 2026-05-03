@@ -770,6 +770,18 @@ html, body {
   border-radius: 20px;
 }
 
+.composite-score {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 8px;
+  display: inline-block;
+}
+.composite-score.pct-high { color: var(--green); background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+.composite-score.pct-mid  { color: var(--amber); background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+.composite-score.pct-low  { color: var(--red);   background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.2); }
+
 .eval-waiting {
   grid-column: 1 / -1;
   font-family: var(--font-mono);

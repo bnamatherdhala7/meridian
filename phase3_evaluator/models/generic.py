@@ -1,16 +1,25 @@
-"""Generic (unconstrained) model — verbose natural language output."""
+"""Generic (unconstrained) model — verbose natural language output.
+
+Simulates what you'd get asking Claude to summarize an incident without
+any schema enforcement or structured output requirements. Receives raw
+tool results without pre-processing, forcing it to synthesize from scratch.
+"""
 import anthropic
 
-_SYSTEM = """You are a network operations analyst. Summarize the investigation findings in a comprehensive report. Be thorough and include all relevant context, background, and caveats."""
+_SYSTEM = """You are a network operations analyst. Summarize the investigation findings in a comprehensive report.
+Be thorough and include all relevant context, background, and caveats. Write in flowing prose."""
 
 
 def summarize(evidence: list[str], tool_results: list[dict], client: anthropic.Anthropic) -> dict:
-    content = "Based on the following investigation evidence, provide a comprehensive incident analysis:\n\n"
-    content += "\n".join(f"- {e}" for e in evidence)
+    # Generic model gets RAW tool results only — no pre-baked evidence list.
+    # This mimics the realistic difference: a constrained run curates evidence;
+    # an unconstrained run has to synthesize from raw output.
+    content = "Analyze the following raw tool results from a network incident investigation and provide a comprehensive report:\n\n"
     if tool_results:
-        content += "\n\nTool results gathered during investigation:\n"
-        for tr in tool_results[:4]:
-            content += f"\n{tr['tool']}:\n{str(tr['result'])[:600]}\n"
+        for tr in tool_results[:5]:
+            content += f"Tool: {tr['tool']}\nRaw output:\n{str(tr['result'])[:800]}\n\n"
+    else:
+        content += "No tool results available.\n"
 
     response = client.messages.create(
         model="claude-sonnet-4-6",

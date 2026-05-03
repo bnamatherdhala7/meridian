@@ -1,5 +1,8 @@
-"""Score agent runs on precision, recall, and token cost."""
+"""Score agent runs on precision, recall, actionability, and token cost."""
 from __future__ import annotations
+
+import json
+import re
 
 import anthropic
 
@@ -21,8 +24,17 @@ _PRECISION_CHECKS: list[tuple[str, list[str]]] = [
 _RECALL_CHECKS: list[tuple[str, list[str]]] = [
     ("out_errors", ["out_errors", "output error", "egress error", "2847"]),
     ("spike_time", ["14:30", "14:32"]),
-    ("threat_pct", ["71", "70%", "71%"]),
-    ("action", ["isolat", "block", "quarantin", "contain"]),
+    ("threat_pct", ["71.2", "71%", "71.2%"]),
+    ("action", ["isolat", "block", "quarantin", "contain", "escalat"]),
+]
+
+# Actionability — does the output give specific, machine-usable directives?
+# Generic prose typically fails these; structured JSON typically passes.
+_ACTIONABILITY_CHECKS: list[tuple[str, list[str]]] = [
+    ("specific_ip", ["10.14.22.87"]),           # names the exact threat IP
+    ("specific_value", ["71.2", "2847", "94.2"]),  # includes exact metric values, not approximations
+    ("action_verb", ["isolat", "block", "quarantin", "contain", "apply", "restart"]),
+    ("parseable_format", ['"recommended_action"', '"threat_ip"', '"confidence"', '"final_state"']),
 ]
 
 
@@ -49,11 +61,31 @@ def evaluate(report: IncidentReport) -> dict:
     gen_text = gen["output"]
     con_text = str(con["output"])
 
-    # Score the investigation run itself (hypothesis + evidence)
-    inv_text = report.hypothesis + " " + report.recommended_action + " " + " ".join(report.evidence)
+    # Score the investigation run itself — include final_state so "ESCALATING" precision check passes
+    inv_text = (
+        report.final_state + " "
+        + report.hypothesis + " "
+        + report.recommended_action + " "
+        + " ".join(report.evidence)
+    )
 
-    # Tool efficiency: 1.0 if ≤5 calls (optimal), degrades linearly above that
+    # Tool efficiency: 1.0 if ≤5 calls (optimal), degrades 15% per extra call above that
     tool_efficiency = round(max(0.0, 1.0 - max(0, report.tool_calls - 5) * 0.15), 3)
+
+    inv_precision    = _score(inv_text, _PRECISION_CHECKS)
+    inv_recall       = _score(inv_text, _RECALL_CHECKS)
+    inv_actionability = _score(inv_text, _ACTIONABILITY_CHECKS)
+
+    gen_precision    = _score(gen_text, _PRECISION_CHECKS)
+    gen_recall       = _score(gen_text, _RECALL_CHECKS)
+    gen_actionability = _score(gen_text, _ACTIONABILITY_CHECKS)
+
+    con_precision    = _score(con_text, _PRECISION_CHECKS)
+    con_recall       = _score(con_text, _RECALL_CHECKS)
+    con_actionability = _score(con_text, _ACTIONABILITY_CHECKS)
+
+    def composite(precision: float, recall: float, actionability: float, efficiency: float = 1.0) -> float:
+        return round(precision * 0.25 + recall * 0.25 + actionability * 0.30 + efficiency * 0.20, 3)
 
     return {
         "incident_id": report.incident_id,
@@ -62,22 +94,28 @@ def evaluate(report: IncidentReport) -> dict:
             "tool_calls": report.tool_calls,
             "total_tokens": report.total_tokens,
             "cost_usd": token_cost(report.input_tokens, report.output_tokens),
-            "precision": _score(inv_text, _PRECISION_CHECKS),
-            "recall": _score(inv_text, _RECALL_CHECKS),
+            "precision": inv_precision,
+            "recall": inv_recall,
+            "actionability": inv_actionability,
             "tool_efficiency": tool_efficiency,
+            "composite": composite(inv_precision, inv_recall, inv_actionability, tool_efficiency),
             "duration_secs": report.duration_secs,
         },
         "generic": {
             "total_tokens": gen["total_tokens"],
             "cost_usd": token_cost(gen["input_tokens"], gen["output_tokens"]),
-            "precision": _score(gen_text, _PRECISION_CHECKS),
-            "recall": _score(gen_text, _RECALL_CHECKS),
+            "precision": gen_precision,
+            "recall": gen_recall,
+            "actionability": gen_actionability,
+            "composite": composite(gen_precision, gen_recall, gen_actionability),
         },
         "constrained": {
             "total_tokens": con["total_tokens"],
             "cost_usd": token_cost(con["input_tokens"], con["output_tokens"]),
-            "precision": _score(con_text, _PRECISION_CHECKS),
-            "recall": _score(con_text, _RECALL_CHECKS),
+            "precision": con_precision,
+            "recall": con_recall,
+            "actionability": con_actionability,
+            "composite": composite(con_precision, con_recall, con_actionability),
             "output": con["output"],
         },
         "token_savings_pct": round(

@@ -38,11 +38,13 @@ export interface EvalDimension {
   cost_usd: number
   precision: number
   recall: number
+  actionability: number
+  composite: number
 }
 
 export interface EvalResults {
   incident_id: string
-  investigation: EvalDimension & { tool_calls: number; duration_secs: number; final_state: string }
+  investigation: EvalDimension & { tool_calls: number; duration_secs: number; final_state: string; tool_efficiency: number }
   generic: EvalDimension
   constrained: EvalDimension & { output?: Record<string, unknown> }
   token_savings_pct: number
