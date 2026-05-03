@@ -1,4 +1,4 @@
-# Design Tokens — Meridian War Room Console
+# Design Tokens — Vigil War Room Console
 
 ## Colour Tokens
 

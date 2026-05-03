@@ -1,10 +1,10 @@
-# Meridian — Agentic Incident Commander for SP + CI
+# Vigil — Agentic Incident Commander for SP + CI
 
 **Model:** Claude claude-sonnet-4-6 · **Token reduction:** 11,000 → 4,200 per investigation (62%) · **Stack:** Python · MCP · FSM · Pydantic
 
 SP shipped the tools. Nobody shipped the brain.
 
-Meridian is the reasoning layer that sits on top of SP's GA MCP server — a Finite State Machine that decides which tools to call, in what order, and when to stop vs. escalate. It adds CI topology and telemetry context that SP's tooling doesn't have, then scores every run on precision, recall, and token cost.
+Vigil is the reasoning layer that sits on top of SP's GA MCP server — a Finite State Machine that decides which tools to call, in what order, and when to stop vs. escalate. It adds CI topology and telemetry context that SP's tooling doesn't have, then scores every run on precision, recall, and token cost.
 
 > Incident arrives → Agent investigates → Output is evaluated → Human is informed or system self-heals
 
@@ -12,7 +12,7 @@ Meridian is the reasoning layer that sits on top of SP's GA MCP server — a Fin
 
 ## How It Works
 
-**1. Connect** — Meridian attaches to SP's real GA MCP server. No mocking. Four native tools (`run_spl_query`, `generate_spl`, `search_indexes`, `get_knowledge_objects`) plus two CI extensions (`get_network_topology`, `get_telemetry_metrics`) added on top.
+**1. Connect** — Vigil attaches to SP's real GA MCP server. No mocking. Four native tools (`run_spl_query`, `generate_spl`, `search_indexes`, `get_knowledge_objects`) plus two CI extensions (`get_network_topology`, `get_telemetry_metrics`) added on top.
 
 **2. Investigate** — An FSM drives a Plan → Act → Observe loop through seven states. Every transition is logged. Every tool call is justified. The agent builds a hypothesis incrementally — it doesn't guess upfront.
 
@@ -40,8 +40,8 @@ SP's four native tools used as-is. Two CI tools added on top:
 | `generate_spl` | SP GA | Optimized SPL from natural language |
 | `search_indexes` | SP GA | Available indexes and data sources |
 | `get_knowledge_objects` | SP GA | Saved searches, field extractions, lookups |
-| `get_network_topology` | CI (Meridian) | Device graph: `device_id`, `interface`, `vlan` relationships |
-| `get_telemetry_metrics` | CI (Meridian) | Interface counters: `error_rate`, `drops`, `utilization` per `time_window` |
+| `get_network_topology` | CI (Vigil) | Device graph: `device_id`, `interface`, `vlan` relationships |
+| `get_telemetry_metrics` | CI (Vigil) | Interface counters: `error_rate`, `drops`, `utilization` per `time_window` |
 
 All tools are stateless — pure request/response. RBAC passthrough: the agent inherits the SP user's permissions, no privilege escalation in the tool layer.
 
@@ -162,7 +162,7 @@ Not three separate scripts — one unified console that shows an incident move f
 
 ## What This Addresses on SP's Roadmap
 
-| Gap | SP's Current State | Meridian |
+| Gap | SP's Current State | Vigil |
 |---|---|---|
 | Orchestration | No agent decides tool sequence | FSM drives Plan → Act → Observe loop |
 | Network context | No CI topology or telemetry | `get_network_topology` + `get_telemetry_metrics` |
@@ -248,7 +248,7 @@ pytest
 ## Out of Scope (v1)
 
 - FSM does not handle truly novel scenarios — those escalate to human-in-the-loop by design
-- OAuth 2.0 is a documented stub — it's on SP's roadmap, not Meridian's
+- OAuth 2.0 is a documented stub — it's on SP's roadmap, not Vigil's
 - SP trial data is synthetic — the architecture is production-ready, the data is not
 - The "CI-tuned" mode is prompt + schema, not a separately trained model
 
