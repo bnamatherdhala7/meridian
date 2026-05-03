@@ -3,10 +3,20 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import queue
 import threading
 from pathlib import Path
 from typing import Any
+
+# Load .env from project root if present
+_env_path = Path(__file__).parent.parent / ".env"
+if _env_path.exists():
+    for _line in _env_path.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _, _v = _line.partition("=")
+            os.environ.setdefault(_k.strip(), _v.strip())
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -99,6 +109,8 @@ async def run_investigation() -> StreamingResponse:
                     "result_preview": _result_preview(data["tool"], result),
                     "duration_ms": data.get("duration_ms", 0),
                     "anomaly": _is_anomaly(data["tool"], result),
+                    "input_full": data.get("input_full", ""),
+                    "result_full": data.get("result_full", ""),
                 })
 
         try:
@@ -147,10 +159,17 @@ async def run_investigation() -> StreamingResponse:
     )
 
 
-# Serve built React app in production
+# Serve built React app in production (SPA catch-all — must be last)
 _dist = Path(__file__).parent.parent / "ui/dist"
 if _dist.exists():
-    app.mount("/", StaticFiles(directory=str(_dist), html=True), name="ui")
+    from fastapi.responses import FileResponse
+
+    # Serve static assets at /assets so API routes at /api/* take priority
+    app.mount("/assets", StaticFiles(directory=str(_dist / "assets")), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str = "") -> FileResponse:  # noqa: ARG001
+        return FileResponse(str(_dist / "index.html"))
 
 
 if __name__ == "__main__":

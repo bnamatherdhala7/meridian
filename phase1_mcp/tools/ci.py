@@ -1,4 +1,5 @@
 """Mocked CI network topology and telemetry tools."""
+import time
 from typing import Any
 
 _TOPOLOGY: dict[str, Any] = {
@@ -52,6 +53,7 @@ _TELEMETRY: dict[str, Any] = {
 
 
 def get_network_topology(site: str = "", device_id: str = "") -> dict[str, Any]:
+    time.sleep(0.118)
     devices = list(_TOPOLOGY["devices"])
     if site:
         devices = [d for d in devices if d["site"].lower() == site.lower()]
@@ -65,6 +67,7 @@ def get_telemetry_metrics(
     interface: str = "",
     time_window: str = "last 5 minutes",
 ) -> dict[str, Any]:
+    time.sleep(0.287)
     device = _TELEMETRY.get(device_id, {})
     if interface:
         metrics = device.get(interface, {})

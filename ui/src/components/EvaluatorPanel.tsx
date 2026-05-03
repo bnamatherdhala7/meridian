@@ -1,3 +1,4 @@
+import React from 'react'
 import type { EvalResults } from '../types'
 
 interface Props {
@@ -80,12 +81,12 @@ export default function EvaluatorPanel({ results, running }: Props) {
       </div>
 
       {rows.map(({ label, inv: invCell, gen: genCell, con: conCell }) => (
-        <>
-          <div key={`lbl-${label}`} className="eval-row-label">{label}</div>
-          <div key={`inv-${label}`}>{invCell}</div>
-          <div key={`gen-${label}`}>{genCell}</div>
-          <div key={`con-${label}`}>{conCell}</div>
-        </>
+        <React.Fragment key={label}>
+          <div className="eval-row-label">{label}</div>
+          <div>{invCell}</div>
+          <div>{genCell}</div>
+          <div>{conCell}</div>
+        </React.Fragment>
       ))}
     </div>
   )

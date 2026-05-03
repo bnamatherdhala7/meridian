@@ -90,6 +90,10 @@ html, body {
   gap: 10px;
 }
 
+.app-main--has-banner {
+  top: 90px;
+}
+
 /* ── Header ──────────────────────────────────────────────────────────── */
 .wordmark {
   font-family: var(--font-head);
@@ -191,6 +195,33 @@ html, body {
 .btn-run:active:not(:disabled) { transform: scale(0.98); }
 .btn-run:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ── Error Banner ────────────────────────────────────────────────────── */
+.error-banner {
+  position: fixed;
+  top: 54px;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  background: rgba(239,68,68,0.12);
+  border-bottom: 1px solid rgba(239,68,68,0.35);
+  padding: 8px 20px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--red);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.error-banner-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.error-banner-hint {
+  color: var(--muted);
+}
+
 /* ── Card ────────────────────────────────────────────────────────────── */
 .card {
   background: var(--card);
@@ -198,6 +229,8 @@ html, body {
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-header {
@@ -207,6 +240,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .card-title {
@@ -231,7 +265,8 @@ html, body {
 .card-body {
   padding: 12px 14px;
   overflow-y: auto;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 /* ── FSM Diagram ─────────────────────────────────────────────────────── */
@@ -417,6 +452,45 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+}
+
+/* ── Tool Trace (expand/collapse) ───────────────────────────────────── */
+.tool-trace {
+  margin-top: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  animation: slide-in 0.2s ease;
+}
+
+.tool-trace-section {
+  border-bottom: 1px solid var(--border);
+}
+.tool-trace-section:last-child { border-bottom: none; }
+
+.tool-trace-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--subtle);
+  background: rgba(255,255,255,0.02);
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tool-trace-body {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--muted);
+  line-height: 1.55;
+  padding: 8px;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--surface);
 }
 
 /* ── Evidence Panel ──────────────────────────────────────────────────── */

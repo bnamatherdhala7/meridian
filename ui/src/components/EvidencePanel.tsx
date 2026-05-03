@@ -15,7 +15,7 @@ export default function EvidencePanel({ evidence }: Props) {
   return (
     <div className="evidence-list">
       {evidence.map((item, i) => (
-        <div key={i} className="evidence-item">
+        <div key={`ev-${i}`} className="evidence-item">
           <span className="evidence-bullet">◆</span>
           <span>{item}</span>
         </div>

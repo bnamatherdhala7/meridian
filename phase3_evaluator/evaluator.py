@@ -52,6 +52,9 @@ def evaluate(report: IncidentReport) -> dict:
     # Score the investigation run itself (hypothesis + evidence)
     inv_text = report.hypothesis + " " + report.recommended_action + " " + " ".join(report.evidence)
 
+    # Tool efficiency: 1.0 if ≤5 calls (optimal), degrades linearly above that
+    tool_efficiency = round(max(0.0, 1.0 - max(0, report.tool_calls - 5) * 0.15), 3)
+
     return {
         "incident_id": report.incident_id,
         "investigation": {
@@ -61,6 +64,7 @@ def evaluate(report: IncidentReport) -> dict:
             "cost_usd": token_cost(report.input_tokens, report.output_tokens),
             "precision": _score(inv_text, _PRECISION_CHECKS),
             "recall": _score(inv_text, _RECALL_CHECKS),
+            "tool_efficiency": tool_efficiency,
             "duration_secs": report.duration_secs,
         },
         "generic": {

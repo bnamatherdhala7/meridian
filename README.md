@@ -1,237 +1,182 @@
-# Vigil — Agentic Incident Commander for SP + CI
+# Vigil — Agentic Incident Commander
 
-**Model:** Claude claude-sonnet-4-6 · **Token reduction:** 11,000 → 4,200 per investigation (62%) · **Stack:** Python · MCP · FSM · Pydantic
+> **SP shipped the tools. Nobody shipped the brain.**
 
-SP shipped the tools. Nobody shipped the brain.
-
-Vigil is the reasoning layer that sits on top of SP's GA MCP server — a Finite State Machine that decides which tools to call, in what order, and when to stop vs. escalate. It adds CI topology and telemetry context that SP's tooling doesn't have, then scores every run on precision, recall, and token cost.
-
-> Incident arrives → Agent investigates → Output is evaluated → Human is informed or system self-heals
+Vigil is a Finite State Machine agent that sits on top of SP's MCP server and autonomously investigates network incidents — deciding which tools to call, in what order, and when to escalate vs. self-heal. It then scores its own run on precision, recall, and token cost.
 
 ---
 
-## How It Works
+## The Problem
 
-**1. Connect** — Vigil attaches to SP's real GA MCP server. No mocking. Four native tools (`run_spl_query`, `generate_spl`, `search_indexes`, `get_knowledge_objects`) plus two CI extensions (`get_network_topology`, `get_telemetry_metrics`) added on top.
+When a network incident fires at 2am, an operator opens SP and stares at a search bar.
 
-**2. Investigate** — An FSM drives a Plan → Act → Observe loop through seven states. Every transition is logged. Every tool call is justified. The agent builds a hypothesis incrementally — it doesn't guess upfront.
+They know the device. They know the interface. But getting from *alert* to *root cause* requires 5–10 manual queries, cross-referencing topology data from CI Catalyst, and then deciding whether to remediate or escalate — all under time pressure.
 
-**3. Evaluate** — A scoring layer grades the run. Precision, recall, token cost, tool efficiency. Two model modes compared side-by-side. The token delta is the business metric most teams ignore.
+SP has powerful tools (`run_spl_query`, `get_network_topology`, telemetry metrics). The gap is **the reasoning layer** that connects them: what to query first, how to interpret the results, and when to act.
 
 ---
 
-## The Three Phases
+## What Vigil Does
 
-| Phase | What It Is | Deliverable |
+One incident in. Structured decision out.
+
+```
+[Incident Alert] → [FSM Investigation] → [Hypothesis] → [Escalate or Remediate]
+                        ↑
+                  6 tool calls max
+                  state-filtered per phase
+                  scored against ground truth
+```
+
+The agent doesn't just call tools randomly — it follows an auditable Finite State Machine with 7 states. Every transition is logged. Every tool call is justified by the current state's evidence needs.
+
+---
+
+## War Room Dashboard
+
+![Vigil War Room Dashboard](docs/screenshots/warroom.svg)
+
+The React frontend streams live events from the investigation as it runs — FSM state transitions, tool call traces with expand/collapse, evidence collection, and the final evaluator comparison.
+
+---
+
+## System Architecture
+
+![Vigil Architecture](docs/screenshots/architecture.svg)
+
+**Three phases, one pipeline:**
+
+| Phase | What It Does | Output |
 |---|---|---|
-| **Phase 1 — MCP Layer** | Connects to SP GA + adds CI tools | Tool registry with 6 callable tools |
-| **Phase 2 — FSM Commander** | Drives investigation loop through 7 states | Structured JSON incident report |
-| **Phase 3 — Evaluator** | Scores runs on 5 dimensions | Terminal table + JSON report |
+| **Phase 1 — MCP Layer** | Connects to SP GA's 4 native tools + adds 2 CI extensions | 6 callable tools, RBAC passthrough |
+| **Phase 2 — FSM Commander** | Claude drives a Plan→Act→Observe loop through 7 states | Structured JSON incident report |
+| **Phase 3 — Evaluator** | Scores runs on precision, recall, token cost, tool efficiency | Side-by-side generic vs. constrained comparison |
 
 ---
 
-## Phase 1 — MCP Tool Registry
+## The FSM — Why Not a Free-Form Agent Loop?
 
-SP's four native tools used as-is. Two CI tools added on top:
-
-| Tool | Source | What It Returns |
-|---|---|---|
-| `run_spl_query` | SP GA | SPL query results |
-| `generate_spl` | SP GA | Optimized SPL from natural language |
-| `search_indexes` | SP GA | Available indexes and data sources |
-| `get_knowledge_objects` | SP GA | Saved searches, field extractions, lookups |
-| `get_network_topology` | CI (Vigil) | Device graph: `device_id`, `interface`, `vlan` relationships |
-| `get_telemetry_metrics` | CI (Vigil) | Interface counters: `error_rate`, `drops`, `utilization` per `time_window` |
-
-All tools are stateless — pure request/response. RBAC passthrough: the agent inherits the SP user's permissions, no privilege escalation in the tool layer.
-
----
-
-## Phase 2 — FSM Incident Commander
-
-Seven states. Every transition is rule-based, auditable, and logged.
+On live network infrastructure, an agent that takes an unpredictable path is a liability. The FSM makes every decision visible and auditable:
 
 ```
 IDLE → TRIAGE → INVESTIGATING → HYPOTHESIZING → REMEDIATING → RESOLVED
-                                              ↘ ESCALATING
+                                              ↘ ESCALATING  ↗
 ```
 
-### State Transitions
-
-| From | To | Trigger |
+| State | What Claude Can Call | Decision Rule |
 |---|---|---|
-| IDLE | TRIAGE | Incident received |
-| TRIAGE | INVESTIGATING | Incident confirmed, data sources identified |
-| INVESTIGATING | HYPOTHESIZING | Evidence collected, pattern emerging |
-| HYPOTHESIZING | REMEDIATING | Confidence ≥ 0.75 + known remediation path |
-| HYPOTHESIZING | ESCALATING | Novel anomaly, ambiguous data, or risk above threshold |
-| INVESTIGATING | ESCALATING | Dead end after N tool calls |
-| REMEDIATING | RESOLVED | Remediation confirmed |
-| ESCALATING | RESOLVED | Human acknowledged |
+| TRIAGE | `search_indexes`, `get_network_topology` | Confirm data sources + device role |
+| INVESTIGATING | `get_telemetry_metrics`, `run_spl_query` | Gather error counters + traffic data |
+| HYPOTHESIZING | *(no tools)* | Form hypothesis from evidence |
+| REMEDIATING | *(no tools)* | Execute known-safe fix |
+| ESCALATING | *(no tools)* | Single IP >60% egress, or ambiguous data |
 
-### Reference Incident
+**State-filtered tool lists** prevent Claude from calling wrong tools at wrong times — the tool list itself changes per state, not just the prompt.
 
-> "High packet loss on CI Catalyst Switch in San Jose — interface GigE0/1"
+---
 
-The agent's reasoning chain for this scenario:
+## Reference Incident
+
+> **INC-20240214-001 · P2 · San Jose**  
+> High packet loss on Cisco Catalyst `sj-catalyst-01` / `GigE0/1`
+
+The agent's reasoning chain:
 
 ```
-1. generate_spl      → craft query for interface error counters on GigE0/1
-2. run_spl_query     → 30-min windowed stats: 2,847 out_errors/min at 14:32 UTC
-3. search_indexes    → discover correlated ISE / security logs
-4. run_spl_query     → egress traffic by source IP → 10.14.22.87 = 71% of total
-5. FSM decision      → single IP > 60% threshold → ESCALATING
+1. search_indexes      → confirms network_telemetry, netflow, security_events available     [145ms]
+2. get_network_topology → sj-catalyst-01 uplinks to sj-core-01, GigE0/1 on vlan=100       [118ms]
+3. get_telemetry_metrics → out_errors=2847, utilization=94.2%, drops=1203 ⚠               [287ms]
+4. run_spl_query (errors) → avg out_errors=2847.3/min, spike started 14:30 UTC ⚠          [421ms]
+5. run_spl_query (egress) → src_ip 10.14.22.87 = 71.2% of egress (threshold: 60%) ⚠      [389ms]
+                                                                                            ─────
+FSM decision: single IP > 60% → ESCALATING (confidence 0.93)                        total: ~18s
 ```
 
-### Structured Output
+Structured output:
 
 ```json
 {
   "incident_id": "INC-20240214-001",
   "final_state": "ESCALATING",
-  "hypothesis": "Potential exfiltration from 10.14.22.87 — 71% of egress traffic",
-  "evidence": [
-    "2847 out_errors/min spike at 14:32 UTC",
-    "No corresponding in_errors (asymmetric — rules out duplex mismatch)"
-  ],
-  "tool_calls": 4,
+  "hypothesis": "sj-catalyst-01 GigE0/1: out_errors=2847 spike at 14:30 UTC, src_ip 10.14.22.87 accounts for 71.2% of egress — isolate and escalate for threat intel",
+  "tool_calls": 5,
+  "confidence": 0.93,
   "recommended_action": "Isolate src_ip=10.14.22.87 pending threat intel confirmation",
-  "confidence": 0.84
+  "total_tokens": 4847,
+  "duration_secs": 18.4
 }
 ```
 
-### Why FSM Over a Free-Form Agent Loop
-
-On live network infrastructure, an agent that takes an unpredictable path is a liability. The FSM makes every decision visible: operators can see exactly which state the system is in, which transition fired, and why. SP's own roadmap presentation (28:10–39:59) describes the journey from "reflex actions" to "autonomous workflows." The FSM is what makes autonomous workflows trustworthy enough to run on production.
-
 ---
 
-## Phase 3 — Agent Interaction Evaluator
+## Phase 3 — Token Cost as a First-Class Metric
 
-Scores runs on five dimensions. Reframes LLM-as-judge as a prototype of SP's roadmap item: "Observability for AI agent interactions" (roadmap timestamp: 53:34–54:19).
+The same base model (`claude-sonnet-4-6`) run two ways:
 
-### Two Model Modes Compared
+| Mode | What It Is | Tokens | Cost/Run |
+|---|---|---|---|
+| Generic (unconstrained) | No schema enforcement | ~11,200 | ~$0.056 |
+| Constrained (schema) | Strict system prompt + JSON schema | ~4,847 | ~$0.024 |
 
-| Dimension | Generic (unconstrained) | Schema-enforced (constrained) |
+**57% token reduction. Zero model change.** Schema enforcement + tight prompts cut token waste without retraining. At CI/SP scale — tens of thousands of daily investigations — this is a real cloud margin problem.
+
+Scoring dimensions:
+
+| Metric | Generic | Constrained |
 |---|---|---|
-| Output format | Verbose natural language | Structured JSON, anomaly-focused |
-| Token count | ~11,000 | ~4,200 |
-| Cost per run | ~$0.056 | ~$0.021 |
-| Actionability | Hedged, general | Specific device + interface + IP |
-| Implementation | Base model, no constraints | Same model + strict system prompt + Pydantic schema |
-
-**62% token reduction. Zero model change.** The "CI-tuned" mode is not a different model — it's the same base LLM with schema enforcement. Prompt engineering + output schemas cut token waste without retraining anything.
-
-### Scoring Dimensions
-
-| Metric | Definition |
-|---|---|
-| Precision | Did the output correctly identify the anomalous component? |
-| Recall | Did it surface all relevant evidence (errors, traffic spike, suspect IP)? |
-| Token cost | `total_tokens × cost_per_1k` — shown explicitly, not abstracted |
-| Tool efficiency | Did the agent use the minimum necessary tool calls? |
-| Composite | Weighted combination of the above, configurable per deployment |
-
-At CI/SP scale — tens of thousands of investigations daily — the difference between 11,000 and 4,200 tokens per run is a real cloud margin problem. Surfacing it in the evaluator makes the business case visible.
-
----
-
-## War Room Console
-
-All three phases in one terminal dashboard. One incident, full lifecycle:
-
-```
-┌─────────────────────────────────────────────────────┐
-│                  War Room Console                    │
-│  ┌──────────┐  ┌──────────────────┐  ┌───────────┐  │
-│  │  Phase 1 │  │    Phase 2       │  │  Phase 3  │  │
-│  │ MCP Tool │  │ FSM Incident     │  │ Evaluator │  │
-│  │ Registry │  │ Commander        │  │ Panel     │  │
-│  │          │  │                  │  │           │  │
-│  │ SP       │  │ PLAN→ACT→OBSERVE │  │ Score     │  │
-│  │ native + │  │ state machine    │  │ Tokens    │  │
-│  │ CI       │  │ reasoning trace  │  │ Precision │  │
-│  │ mocked   │  │                  │  │ Recall    │  │
-│  └──────────┘  └──────────────────┘  └───────────┘  │
-└─────────────────────────────────────────────────────┘
-```
-
-Not three separate scripts — one unified console that shows an incident move from detection to resolution or escalation in real time.
-
----
-
-## What This Addresses on SP's Roadmap
-
-| Gap | SP's Current State | Vigil |
-|---|---|---|
-| Orchestration | No agent decides tool sequence | FSM drives Plan → Act → Observe loop |
-| Network context | No CI topology or telemetry | `get_network_topology` + `get_telemetry_metrics` |
-| Decision logic | No threshold-based escalation | FSM transitions with configurable thresholds |
-| Agent observability | Named as a roadmap item — not shipped | Phase 3 Evaluator is a working prototype |
-| Token economics | No cost-aware evaluation | Token cost is a first-class scoring dimension |
-
----
-
-## Tech Stack
-
-| Component | Technology | Why |
-|---|---|---|
-| Language | Python 3.11+ | Typing, async, ecosystem |
-| MCP client | `mcp` Python SDK | Anthropic's reference implementation |
-| Agent LLM | Claude via Anthropic API | `claude-opus-4-7` for reasoning, `claude-sonnet-4-6` for throughput |
-| FSM | `transitions` | Readable state definitions, auditable transitions |
-| Schema enforcement | `pydantic` | Structured output validation, token reduction |
-| SP connection | Local trial → env var swap | `SP_ENDPOINT` + `SP_TOKEN` |
-| UI | `rich` | Terminal dashboard, no browser dependency |
-| Lint / types | `ruff` + `mypy` | Enforced on commit |
-| Tests | `pytest` | Unit + integration |
+| Precision | 0.55 | 0.91 |
+| Recall | 0.75 | 1.00 |
+| Tool Efficiency | — | 0.80 |
+| Token Cost | 11,200 | 4,847 |
+| **Composite** | 0.52 | **0.87** |
 
 ---
 
 ## Getting Started
 
 ```bash
-# Install
+# Install Python deps
 pip install -e ".[dev]"
 
-# Configure SP connection (or leave in mock mode)
-export SP_ENDPOINT=https://your-sp-instance:8089
-export SP_TOKEN=your-token
+# Set your Anthropic API key
+echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
 
-# Configure Claude
-export ANTHROPIC_API_KEY=your-key
+# Start the FastAPI backend
+cd api && uvicorn server:app --reload
 
-# Run Phase 1 — verify MCP connection
-python -m phase1_mcp.server
+# Start the React frontend (separate terminal)
+cd ui && npm install && npm run dev
 
-# Run Phase 2 — reference incident
+# Open http://localhost:5173 → click "Run Investigation"
+```
+
+**CLI only (no UI):**
+
+```bash
+# Run Phase 2 directly on the reference incident
 python -m phase2_agent.commander --scenario phase2_agent/scenarios/packet_loss_sj.json
-
-# Run Phase 3 — score the run
-python -m phase3_evaluator.evaluator --run-id <id>
-
-# Run the war room demo
-python demo/console.py
-
-# Lint + typecheck
-ruff check . && mypy .
-
-# Tests
-pytest
 ```
 
 ---
 
-## Investigation Cost by Mode
+## What This Addresses on SP's Roadmap
 
-| Scenario | Model Mode | Tokens | Cost per Run |
-|---|---|---|---|
-| Packet loss, known pattern | Schema-enforced | ~4,200 | ~$0.021 |
-| Packet loss, known pattern | Unconstrained | ~11,000 | ~$0.056 |
-| Novel anomaly → ESCALATING | Schema-enforced | ~5,800 | ~$0.029 |
-| Novel anomaly → ESCALATING | Unconstrained | ~14,000 | ~$0.070 |
+| Gap | Today | Vigil |
+|---|---|---|
+| Orchestration layer | Operators manually chain queries | FSM drives tool sequence automatically |
+| Network context | SP has no CI topology or telemetry | `get_network_topology` + `get_telemetry_metrics` CI extensions |
+| Escalation logic | Human judgement, ad-hoc | Configurable thresholds (>60% egress → ESCALATING) |
+| Agent observability | Not yet shipped | Phase 3 Evaluator is a working prototype |
+| Token economics | Not measured | First-class scoring dimension, shown per run |
 
-*Costs based on `claude-sonnet-4-6` pricing. Multiply by daily incident volume for cloud margin impact.*
+---
+
+## Tech Stack
+
+- **Python 3.11+** · `anthropic` SDK · `transitions` (FSM) · `pydantic`
+- **FastAPI** with Server-Sent Events for real-time streaming
+- **React + Vite** frontend with live FSM diagram, tool trace expansion, evaluator panel
+- **Claude `claude-sonnet-4-6`** — FSM commander + evaluator
 
 ---
 
@@ -240,7 +185,7 @@ pytest
 | File | Purpose |
 |---|---|
 | [docs/prd.md](docs/prd.md) | VP-level product requirements — market gap, solution, roadmap alignment |
-| [CLAUDE.md](CLAUDE.md) | Build spec — architecture decisions, hard rules, command reference |
+| [CLAUDE.md](CLAUDE.md) | Architecture decisions, hard rules, command reference |
 | [phase2_agent/scenarios/packet_loss_sj.json](phase2_agent/scenarios/packet_loss_sj.json) | Reference incident for demo |
 
 ---
@@ -248,10 +193,9 @@ pytest
 ## Out of Scope (v1)
 
 - FSM does not handle truly novel scenarios — those escalate to human-in-the-loop by design
+- SP trial data is synthetic — architecture is production-ready, data is not
 - OAuth 2.0 is a documented stub — it's on SP's roadmap, not Vigil's
-- SP trial data is synthetic — the architecture is production-ready, the data is not
-- The "CI-tuned" mode is prompt + schema, not a separately trained model
 
 ---
 
-*Built on SP's GA MCP server · FSM-driven agentic reasoning · Token cost as a first-class metric*
+*SP GA MCP · FSM-driven agentic reasoning · Token cost as a first-class metric*

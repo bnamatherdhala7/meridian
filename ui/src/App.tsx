@@ -111,6 +111,8 @@ export default function App() {
               tool: event.tool,
               input_preview: event.input_preview,
               result_preview: event.result_preview,
+              input_full: event.input_full,
+              result_full: event.result_full,
               duration_ms: event.duration_ms,
               anomaly: event.anomaly,
               timestamp: Date.now(),
@@ -141,7 +143,7 @@ export default function App() {
     }
   }, [])
 
-  const { status, fsmState, fsmHistory, toolCalls, evidence, totalTokens, report, evalResults } = state
+  const { status, fsmState, fsmHistory, toolCalls, evidence, totalTokens, report, evalResults, error } = state
 
   return (
     <>
@@ -152,7 +154,7 @@ export default function App() {
         <div className="header-incident">
           <span className="header-incident-id">INC-20240214-001 · P2 · San Jose</span>
           <span className="header-incident-title">
-            High packet loss on CI Catalyst sj-catalyst-01 / GigE0/1
+            High packet loss on Cisco Catalyst sj-catalyst-01 / GigE0/1
           </span>
         </div>
         <div className="header-right">
@@ -173,8 +175,19 @@ export default function App() {
         </div>
       </header>
 
+      {/* Error banner */}
+      {error && (
+        <div className="error-banner">
+          <span className="error-banner-icon">⚠</span>
+          <span>{error}</span>
+          {error.toLowerCase().includes('api') || error.toLowerCase().includes('auth') ? (
+            <span className="error-banner-hint"> — check that ANTHROPIC_API_KEY is set</span>
+          ) : null}
+        </div>
+      )}
+
       {/* Main content */}
-      <main className="app-main">
+      <main className={`app-main${error ? ' app-main--has-banner' : ''}`}>
         {/* FSM diagram */}
         <div className="card fsm-card">
           <div className="card-header">

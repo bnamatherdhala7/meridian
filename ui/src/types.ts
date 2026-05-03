@@ -12,6 +12,8 @@ export interface ToolCall {
   tool: string
   input_preview: string
   result_preview: string
+  input_full: string
+  result_full: string
   duration_ms: number
   anomaly: boolean
   timestamp: number
@@ -50,7 +52,7 @@ export type AppStatus = 'idle' | 'running' | 'evaluating' | 'done' | 'error'
 
 export type SSEEvent =
   | { type: 'state_change'; state: string; from_state?: string }
-  | { type: 'tool_call'; tool: string; input_preview: string; result_preview: string; duration_ms: number; anomaly: boolean }
+  | { type: 'tool_call'; tool: string; input_preview: string; result_preview: string; input_full: string; result_full: string; duration_ms: number; anomaly: boolean }
   | { type: 'report'; data: IncidentReport }
   | { type: 'eval_results'; data: EvalResults }
   | { type: 'error'; message: string }

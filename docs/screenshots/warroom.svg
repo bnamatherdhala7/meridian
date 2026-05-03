@@ -1,0 +1,217 @@
+<svg viewBox="0 0 960 620" xmlns="http://www.w3.org/2000/svg" font-family="'JetBrains Mono', 'Courier New', monospace">
+  <!-- Background -->
+  <rect width="960" height="620" fill="#020617"/>
+
+  <!-- Header bar -->
+  <rect width="960" height="52" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="24" y="33" fill="#fbbf24" font-size="13" font-weight="700" letter-spacing="3" font-family="'Segoe UI', system-ui, sans-serif">VIGIL</text>
+  <rect x="72" y="18" width="1" height="16" fill="#334155"/>
+  <text x="84" y="28" fill="#94a3b8" font-size="9">INC-20240214-001 · P2 · San Jose</text>
+  <text x="84" y="40" fill="#64748b" font-size="8">High packet loss on Cisco Catalyst sj-catalyst-01 / GigE0/1</text>
+  <!-- Status pill -->
+  <rect x="774" y="16" width="76" height="20" rx="10" fill="#166534" stroke="#16a34a" stroke-width="1"/>
+  <text x="812" y="30" text-anchor="middle" fill="#4ade80" font-size="8" font-weight="600">● COMPLETE</text>
+  <!-- Token counter -->
+  <text x="744" y="30" text-anchor="end" fill="#64748b" font-size="8">4,847</text>
+  <text x="770" y="30" fill="#334155" font-size="8">tokens</text>
+  <!-- Run button -->
+  <rect x="864" y="14" width="82" height="24" rx="8" fill="#fbbf24"/>
+  <text x="905" y="30" text-anchor="middle" fill="#0f172a" font-size="9" font-weight="700" font-family="'Segoe UI', system-ui">Run Again</text>
+
+  <!-- FSM Card (full width top) -->
+  <rect x="12" y="64" width="936" height="130" rx="10" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="28" y="84" fill="#94a3b8" font-size="9" letter-spacing="1" font-family="'Segoe UI', system-ui">FSM STATE MACHINE</text>
+  <text x="916" y="84" text-anchor="end" fill="#fbbf24" font-size="8" font-family="'Segoe UI', system-ui">ESCALATING</text>
+
+  <!-- FSM nodes -->
+  <!-- IDLE -->
+  <rect x="38" y="100" width="70" height="30" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="73" y="119" text-anchor="middle" fill="#475569" font-size="9">IDLE</text>
+
+  <!-- arrow -->
+  <line x1="110" y1="115" x2="128" y2="115" stroke="#334155" stroke-width="1.5"/>
+  <polygon points="128,112 134,115 128,118" fill="#334155"/>
+
+  <!-- TRIAGE (visited) -->
+  <rect x="136" y="100" width="70" height="30" rx="6" fill="#1e3a5f" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="171" y="119" text-anchor="middle" fill="#93c5fd" font-size="9">TRIAGE</text>
+
+  <line x1="208" y1="115" x2="226" y2="115" stroke="#1d4ed8" stroke-width="1.5"/>
+  <polygon points="226,112 232,115 226,118" fill="#1d4ed8"/>
+
+  <!-- INVESTIGATING (visited) -->
+  <rect x="234" y="100" width="90" height="30" rx="6" fill="#1e3a5f" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="279" y="119" text-anchor="middle" fill="#93c5fd" font-size="9">INVESTIGATING</text>
+
+  <line x1="326" y1="115" x2="344" y2="115" stroke="#1d4ed8" stroke-width="1.5"/>
+  <polygon points="344,112 350,115 344,118" fill="#1d4ed8"/>
+
+  <!-- HYPOTHESIZING (visited) -->
+  <rect x="352" y="100" width="96" height="30" rx="6" fill="#1e3a5f" stroke="#1d4ed8" stroke-width="1.5"/>
+  <text x="400" y="119" text-anchor="middle" fill="#93c5fd" font-size="9">HYPOTHESIZING</text>
+
+  <line x1="450" y1="115" x2="468" y2="115" stroke="#1d4ed8" stroke-width="1.5"/>
+  <polygon points="468,112 474,115 468,118" fill="#1d4ed8"/>
+
+  <!-- REMEDIATING (not visited, dimmed) -->
+  <rect x="476" y="100" width="86" height="30" rx="6" fill="#1e293b" stroke="#1e3040" stroke-width="1"/>
+  <text x="519" y="119" text-anchor="middle" fill="#2d3748" font-size="9">REMEDIATING</text>
+
+  <!-- ESCALATING (active, highlighted) -->
+  <rect x="612" y="95" width="90" height="40" rx="6" fill="#450a0a" stroke="#ef4444" stroke-width="2"/>
+  <text x="657" y="117" text-anchor="middle" fill="#fca5a5" font-size="10" font-weight="600">ESCALATING</text>
+  <text x="657" y="129" text-anchor="middle" fill="#ef4444" font-size="8">● active</text>
+
+  <!-- Diagonal arrow to escalating -->
+  <line x1="562" y1="115" x2="610" y2="115" stroke="#ef4444" stroke-width="1.5"/>
+  <polygon points="610,112 616,115 610,118" fill="#ef4444"/>
+
+  <!-- RESOLVED -->
+  <rect x="750" y="100" width="72" height="30" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="786" y="119" text-anchor="middle" fill="#475569" font-size="9">RESOLVED</text>
+
+  <line x1="706" y1="115" x2="748" y2="115" stroke="#334155" stroke-width="1.5"/>
+  <polygon points="748,112 754,115 748,118" fill="#334155"/>
+
+  <!-- FSM path label -->
+  <text x="480" y="172" text-anchor="middle" fill="#475569" font-size="8" font-family="'Segoe UI', system-ui">IDLE → TRIAGE → INVESTIGATING → HYPOTHESIZING → ESCALATING (src_ip 10.14.22.87 accounts for 71.2% of egress, threshold 60%)</text>
+
+  <!-- Middle row - three columns -->
+  <!-- Tool Calls card -->
+  <rect x="12" y="206" width="284" height="244" rx="10" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="28" y="226" fill="#94a3b8" font-size="9" letter-spacing="1" font-family="'Segoe UI', system-ui">TOOL CALLS</text>
+  <rect x="252" y="216" width="30" height="16" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="267" y="228" text-anchor="middle" fill="#fbbf24" font-size="8">5</text>
+
+  <!-- Tool call items -->
+  <!-- Tool 1 -->
+  <rect x="26" y="236" width="256" height="40" rx="6" fill="#0f1929" stroke="#1e293b"/>
+  <rect x="26" y="236" width="90" height="18" rx="4" fill="#1d4ed8" opacity="0.4"/>
+  <text x="32" y="248" fill="#93c5fd" font-size="8">01 search_idx</text>
+  <text x="274" y="248" text-anchor="end" fill="#475569" font-size="7">145ms</text>
+  <text x="32" y="268" fill="#334155" font-size="7">indexes: network_telemetry, netflow, security_events</text>
+
+  <!-- Tool 2 -->
+  <rect x="26" y="282" width="256" height="40" rx="6" fill="#0f1929" stroke="#1e293b"/>
+  <rect x="26" y="282" width="76" height="18" rx="4" fill="#0d9488" opacity="0.4"/>
+  <text x="32" y="294" fill="#5eead4" font-size="8">02 topology</text>
+  <text x="274" y="294" text-anchor="end" fill="#475569" font-size="7">118ms</text>
+  <text x="32" y="314" fill="#334155" font-size="7">sj-catalyst-01: uplink=sj-core-01, GigE0/1 vlan=100</text>
+
+  <!-- Tool 3 -->
+  <rect x="26" y="328" width="256" height="40" rx="6" fill="#0f1929" stroke="#1e293b"/>
+  <rect x="26" y="328" width="72" height="18" rx="4" fill="#0d9488" opacity="0.4"/>
+  <text x="32" y="340" fill="#5eead4" font-size="8">03 telemetry</text>
+  <text x="274" y="340" text-anchor="end" fill="#475569" font-size="7">287ms</text>
+  <!-- anomaly dot -->
+  <circle cx="258" cy="337" r="4" fill="#ef4444"/>
+  <text x="32" y="360" fill="#334155" font-size="7">out_errors=2847 utilization=94.2% drops=1203</text>
+
+  <!-- Tool 4 -->
+  <rect x="26" y="374" width="256" height="40" rx="6" fill="#0f1929" stroke="#1e293b"/>
+  <rect x="26" y="374" width="56" height="18" rx="4" fill="#1d4ed8" opacity="0.4"/>
+  <text x="32" y="386" fill="#93c5fd" font-size="8">04 run_spl</text>
+  <text x="274" y="386" text-anchor="end" fill="#475569" font-size="7">421ms</text>
+  <circle cx="258" cy="383" r="4" fill="#ef4444"/>
+  <text x="32" y="406" fill="#334155" font-size="7">avg out_errors=2847.3 spike at 14:30 UTC</text>
+
+  <!-- Tool 5 -->
+  <rect x="26" y="420" width="256" height="24" rx="6" fill="#0f1929" stroke="#1e293b"/>
+  <rect x="26" y="420" width="56" height="18" rx="4" fill="#1d4ed8" opacity="0.4"/>
+  <text x="32" y="435" fill="#93c5fd" font-size="8">05 run_spl</text>
+  <text x="274" y="435" text-anchor="end" fill="#475569" font-size="7">389ms</text>
+  <circle cx="258" cy="429" r="4" fill="#ef4444"/>
+
+  <!-- Evidence card -->
+  <rect x="308" y="206" width="284" height="244" rx="10" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="324" y="226" fill="#94a3b8" font-size="9" letter-spacing="1" font-family="'Segoe UI', system-ui">EVIDENCE</text>
+  <rect x="548" y="216" width="30" height="16" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="563" y="228" text-anchor="middle" fill="#fbbf24" font-size="8">1</text>
+
+  <!-- Evidence item -->
+  <rect x="324" y="238" width="252" height="90" rx="6" fill="#0f1929" stroke="#ef4444" stroke-width="1"/>
+  <rect x="324" y="238" width="252" height="18" rx="4" fill="#450a0a" opacity="0.7"/>
+  <text x="330" y="250" fill="#fca5a5" font-size="7" font-weight="600">ESCALATION TRIGGER</text>
+  <text x="330" y="268" fill="#94a3b8" font-size="7.5">sj-catalyst-01 GigE0/1:</text>
+  <text x="330" y="282" fill="#fca5a5" font-size="7.5">out_errors=2847 spike at 14:30 UTC,</text>
+  <text x="330" y="296" fill="#fca5a5" font-size="7.5">src_ip 10.14.22.87 = 71.2% egress</text>
+  <text x="330" y="310" fill="#fbbf24" font-size="7.5">(threshold 60%) — isolate + escalate</text>
+  <text x="330" y="324" fill="#64748b" font-size="7">confidence: 0.93</text>
+
+  <!-- Evidence empty hint for second item -->
+  <text x="450" y="362" text-anchor="middle" fill="#1e293b" font-size="10">—</text>
+
+  <!-- Report card -->
+  <rect x="604" y="206" width="344" height="244" rx="10" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="620" y="226" fill="#94a3b8" font-size="9" letter-spacing="1" font-family="'Segoe UI', system-ui">INCIDENT REPORT</text>
+
+  <!-- JSON report -->
+  <text x="620" y="250" fill="#475569" font-size="8">{</text>
+  <text x="634" y="264" fill="#64748b" font-size="8">"incident_id":</text>
+  <text x="726" y="264" fill="#a78bfa" font-size="8">"INC-20240214-001",</text>
+  <text x="634" y="278" fill="#64748b" font-size="8">"final_state":</text>
+  <text x="726" y="278" fill="#fca5a5" font-size="8">"ESCALATING",</text>
+  <text x="634" y="292" fill="#64748b" font-size="8">"hypothesis":</text>
+  <text x="726" y="292" fill="#fbbf24" font-size="7.5">"sj-catalyst-01 GigE0/1...</text>
+  <text x="634" y="306" fill="#64748b" font-size="8">"tool_calls":</text>
+  <text x="726" y="306" fill="#22c55e" font-size="8">5,</text>
+  <text x="634" y="320" fill="#64748b" font-size="8">"confidence":</text>
+  <text x="726" y="320" fill="#22c55e" font-size="8">0.93,</text>
+  <text x="634" y="334" fill="#64748b" font-size="8">"recommended_action":</text>
+  <text x="726" y="348" fill="#fbbf24" font-size="7">"Isolate src_ip=10.14.22.87,</text>
+  <text x="726" y="360" fill="#fbbf24" font-size="7"> escalate for threat intel",</text>
+  <text x="634" y="374" fill="#64748b" font-size="8">"total_tokens":</text>
+  <text x="726" y="374" fill="#22c55e" font-size="8">4847,</text>
+  <text x="634" y="388" fill="#64748b" font-size="8">"duration_secs":</text>
+  <text x="726" y="388" fill="#22c55e" font-size="8">18.4</text>
+  <text x="620" y="402" fill="#475569" font-size="8">}</text>
+
+  <!-- Evaluator card (bottom) -->
+  <rect x="12" y="460" width="936" height="148" rx="10" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+  <text x="28" y="480" fill="#94a3b8" font-size="9" letter-spacing="1" font-family="'Segoe UI', system-ui">PHASE 3 — EVALUATOR</text>
+  <text x="916" y="480" text-anchor="end" fill="#475569" font-size="8">Generic vs Constrained · Precision · Recall · Token Cost</text>
+
+  <!-- Metrics row labels -->
+  <text x="60" y="508" fill="#64748b" font-size="8" text-anchor="middle" font-family="'Segoe UI', system-ui">METRIC</text>
+  <text x="220" y="508" fill="#64748b" font-size="8" text-anchor="middle" font-family="'Segoe UI', system-ui">GENERIC</text>
+  <text x="420" y="508" fill="#64748b" font-size="8" text-anchor="middle" font-family="'Segoe UI', system-ui">CONSTRAINED</text>
+  <text x="620" y="508" fill="#64748b" font-size="8" text-anchor="middle" font-family="'Segoe UI', system-ui">DELTA</text>
+
+  <line x1="28" y1="514" x2="930" y2="514" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Precision -->
+  <text x="28" y="530" fill="#94a3b8" font-size="8" font-family="'Segoe UI', system-ui">Precision</text>
+  <rect x="158" y="522" width="124" height="12" rx="4" fill="#0f172a"/>
+  <rect x="158" y="522" width="68" height="12" rx="4" fill="#ef4444" opacity="0.7"/>
+  <text x="220" y="532" text-anchor="middle" fill="#fca5a5" font-size="7">0.55</text>
+  <rect x="358" y="522" width="124" height="12" rx="4" fill="#0f172a"/>
+  <rect x="358" y="522" width="112" height="12" rx="4" fill="#22c55e" opacity="0.7"/>
+  <text x="420" y="532" text-anchor="middle" fill="#bbf7d0" font-size="7">0.91</text>
+  <text x="600" y="532" text-anchor="middle" fill="#22c55e" font-size="8">+65%</text>
+
+  <!-- Recall -->
+  <text x="28" y="550" fill="#94a3b8" font-size="8" font-family="'Segoe UI', system-ui">Recall</text>
+  <rect x="158" y="542" width="124" height="12" rx="4" fill="#0f172a"/>
+  <rect x="158" y="542" width="93" height="12" rx="4" fill="#ef4444" opacity="0.7"/>
+  <text x="220" y="552" text-anchor="middle" fill="#fca5a5" font-size="7">0.75</text>
+  <rect x="358" y="542" width="124" height="12" rx="4" fill="#0f172a"/>
+  <rect x="358" y="542" width="124" height="12" rx="4" fill="#22c55e" opacity="0.7"/>
+  <text x="420" y="552" text-anchor="middle" fill="#bbf7d0" font-size="7">1.00</text>
+  <text x="600" y="552" text-anchor="middle" fill="#22c55e" font-size="8">+33%</text>
+
+  <!-- Token Cost -->
+  <text x="28" y="570" fill="#94a3b8" font-size="8" font-family="'Segoe UI', system-ui">Token Cost</text>
+  <rect x="158" y="562" width="124" height="12" rx="4" fill="#0f172a"/>
+  <rect x="158" y="562" width="124" height="12" rx="4" fill="#ef4444" opacity="0.7"/>
+  <text x="220" y="572" text-anchor="middle" fill="#fca5a5" font-size="7">11,200</text>
+  <rect x="358" y="562" width="124" height="12" rx="4" fill="#0f172a"/>
+  <rect x="358" y="562" width="47" height="12" rx="4" fill="#22c55e" opacity="0.7"/>
+  <text x="420" y="572" text-anchor="middle" fill="#bbf7d0" font-size="7">4,847</text>
+  <text x="600" y="572" text-anchor="middle" fill="#22c55e" font-size="8">-57%</text>
+
+  <!-- Composite score -->
+  <rect x="780" y="520" width="140" height="68" rx="8" fill="#0c1a0c" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="850" y="540" text-anchor="middle" fill="#4ade80" font-size="9" font-family="'Segoe UI', system-ui">COMPOSITE SCORE</text>
+  <text x="850" y="568" text-anchor="middle" fill="#22c55e" font-size="26" font-weight="700">0.87</text>
+  <text x="850" y="582" text-anchor="middle" fill="#166534" font-size="8">CONSTRAINED</text>
+</svg>

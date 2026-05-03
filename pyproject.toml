@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vigil"
 version = "0.1.0"
-description = "SP Agentic Ops — Incident Commander"
+description = "Vigil — Splunk Agentic Ops Incident Commander"
 requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.40.0",

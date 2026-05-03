@@ -96,6 +96,15 @@ _TOOL_FUNCTIONS: dict[str, Any] = {
     "get_telemetry_metrics": get_telemetry_metrics,
 }
 
+# Tools available per state — Claude can only call what's relevant
+_STATE_TOOL_ALLOWLIST: dict[str, list[str]] = {
+    "TRIAGE":        ["search_indexes", "get_network_topology"],
+    "INVESTIGATING": ["get_telemetry_metrics", "run_spl_query"],
+    "HYPOTHESIZING": ["run_spl_query"],
+    "REMEDIATING":   [],
+    "ESCALATING":    [],
+}
+
 _FSM_TRIGGER: dict[str, str] = {
     "INVESTIGATING": "begin_investigation",
     "HYPOTHESIZING": "form_hypothesis",
@@ -130,7 +139,7 @@ class IncidentReport:
 
 
 class IncidentCommander:
-    def __init__(self, model: str = "claude-sonnet-4-6", max_tool_calls: int = 10) -> None:
+    def __init__(self, model: str = "claude-sonnet-4-6", max_tool_calls: int = 6) -> None:
         self.model = model
         self.max_tool_calls = max_tool_calls
         self.client = anthropic.Anthropic()
@@ -153,6 +162,12 @@ class IncidentCommander:
         self.output_tokens = 0
 
     def _get_tools(self) -> list[dict]:
+        allowlist = _STATE_TOOL_ALLOWLIST.get(self.state)
+        if allowlist is not None:
+            tools = [t for t in _TOOL_DEFINITIONS if t["name"] in allowlist]
+        else:
+            tools = list(_TOOL_DEFINITIONS)
+
         valid_next = VALID_TRANSITIONS.get(self.state, [])
         transition_tool: dict = {
             "name": "transition_state",
@@ -177,7 +192,7 @@ class IncidentCommander:
                 "required": ["next_state", "reason", "confidence"],
             },
         }
-        return _TOOL_DEFINITIONS + [transition_tool]
+        return tools + [transition_tool]
 
     def _call_tool(self, name: str, kwargs: dict) -> dict:
         fn = _TOOL_FUNCTIONS.get(name)
@@ -194,13 +209,17 @@ class IncidentCommander:
         reason = inp.get("reason", "")
         conf = float(inp.get("confidence", 0.5))
 
+        from_state = self.state  # capture before FSM trigger mutates self.state
+
         trigger = _FSM_TRIGGER.get(next_state)
         if trigger:
             getattr(self, trigger)()
 
         self.hypothesis = reason
         self.confidence = conf
-        if reason:
+        # Add evidence only on final decisions (→ ESCALATING or → REMEDIATING)
+        # This excludes intermediate TRIAGE→INVESTIGATING and INVESTIGATING→HYPOTHESIZING noise
+        if reason and next_state in ("ESCALATING", "REMEDIATING"):
             self.evidence.append(reason)
         if next_state in ("ESCALATING", "REMEDIATING") and not self.recommended_action:
             self.recommended_action = reason
@@ -234,7 +253,7 @@ class IncidentCommander:
         while self.state not in ("ESCALATING", "RESOLVED"):
             response = self.client.messages.create(
                 model=self.model,
-                max_tokens=4096,
+                max_tokens=2048,
                 system=STATE_PROMPTS[self.state],
                 messages=messages,
                 tools=self._get_tools(),
@@ -277,6 +296,15 @@ class IncidentCommander:
                             "input": block.input,
                             "result": result,
                             "duration_ms": elapsed,
+                            "input_full": json.dumps(block.input, indent=2),
+                            "result_full": json.dumps(
+                                {k: v for k, v in result.items() if k != "events"}
+                                if "events" in result else result,
+                                indent=2,
+                            ) + (
+                                f'\n  "events": [{len(result["events"])} events — see full output]'
+                                if "events" in result else ""
+                            ),
                         })
 
                     tool_results.append({

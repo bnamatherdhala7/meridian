@@ -3,6 +3,7 @@
 Swap mode to "live" in config.yaml + set SP_ENDPOINT + SP_TOKEN env vars
 to connect to a real SP instance without changing any other code.
 """
+import time
 from typing import Any
 
 _INDEXES = [
@@ -58,15 +59,18 @@ _EGRESS_RESULT = {
 
 
 def run_spl_query(spl: str, index: str = "*", time_window: str = "last 30 minutes") -> dict[str, Any]:
+    time.sleep(0.38 + (hash(spl) % 100) / 1000)
     spl_lower = spl.lower()
-    if any(k in spl_lower for k in ("out_errors", "in_errors", "drops", "gige0/1", "interface")):
-        return {"query": spl, **_INTERFACE_RESULT}
-    if any(k in spl_lower for k in ("src_ip", "bytes_out", "egress", "netflow")):
+    # Check egress/netflow keywords FIRST — more specific than generic "interface"
+    if any(k in spl_lower for k in ("src_ip", "bytes_out", "egress", "netflow", "sum(bytes", "top_src")):
         return {"query": spl, **_EGRESS_RESULT}
+    if any(k in spl_lower for k in ("out_errors", "in_errors", "drops", "avg(out_errors", "avg(drops", "gige0/1")):
+        return {"query": spl, **_INTERFACE_RESULT}
     return {"query": spl, "events": [], "stats": {"message": "No events matched."}}
 
 
 def generate_spl(natural_language: str, index: str = "network_telemetry") -> dict[str, Any]:
+    time.sleep(0.12)
     nl = natural_language.lower()
     if any(k in nl for k in ("error", "drop", "packet loss", "interface", "gige")):
         return {
@@ -96,8 +100,10 @@ def generate_spl(natural_language: str, index: str = "network_telemetry") -> dic
 
 
 def search_indexes(query: str = "") -> dict[str, Any]:
+    time.sleep(0.042)
     return {"indexes": _INDEXES, "total": len(_INDEXES)}
 
 
 def get_knowledge_objects(object_type: str = "all") -> dict[str, Any]:
+    time.sleep(0.09)
     return {"objects": _KNOWLEDGE_OBJECTS, "total": len(_KNOWLEDGE_OBJECTS)}
