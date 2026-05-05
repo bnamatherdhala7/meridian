@@ -23,7 +23,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from fastapi import Body
 from phase2_agent.commander import IncidentCommander
+from phase2_5_classifier import AlertClassifier
+from phase2_5_classifier.models import Alert
 from phase3_evaluator import evaluator
 
 app = FastAPI(title="Vigil API")
@@ -219,6 +222,59 @@ async def run_investigation(scenario: str = Query(default="packet_loss")) -> Str
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.post("/api/classify")
+async def classify_alerts(alerts: list[dict] = Body(...)) -> dict:
+    """Classify a batch of raw alerts into routing decisions.
+
+    POST body: list of alert dicts with keys:
+        alert_id, timestamp, device_id, src_ip, severity, rule_name, description, raw_fields
+
+    Returns one RoutingDecision per cluster with tier (HIGH/MEDIUM/LOW),
+    confidence, reason, and — for HIGH tier — a ready-to-run FSM scenario dict.
+    """
+    def _run() -> list[dict]:
+        parsed = [
+            Alert(
+                alert_id    = a.get("alert_id", f"ALT-{i}"),
+                timestamp   = a.get("timestamp", "2024-01-01T00:00:00Z"),
+                device_id   = a.get("device_id", "unknown"),
+                src_ip      = a.get("src_ip", ""),
+                severity    = a.get("severity", "medium"),
+                rule_name   = a.get("rule_name", ""),
+                description = a.get("description", ""),
+                raw_fields  = a.get("raw_fields", {}),
+            )
+            for i, a in enumerate(alerts)
+        ]
+        clf       = AlertClassifier()
+        decisions = clf.classify(parsed)
+        return [
+            {
+                "cluster_id":        d.cluster_id,
+                "tier":              d.tier.value,
+                "confidence":        d.confidence,
+                "reason":            d.reason,
+                "key_evidence":      d.key_evidence,
+                "suggested_action":  d.suggested_action,
+                "token_cost":        d.token_cost,
+                "fsm_scenario":      d.fsm_scenario,
+            }
+            for d in decisions
+        ]
+
+    import asyncio
+    loop = asyncio.get_event_loop()
+    results = await loop.run_in_executor(None, _run)
+    high   = sum(1 for r in results if r["tier"] == "HIGH")
+    medium = sum(1 for r in results if r["tier"] == "MEDIUM")
+    low    = sum(1 for r in results if r["tier"] == "LOW")
+    return {
+        "clusters":   len(results),
+        "routed":     {"high": high, "medium": medium, "suppressed": low},
+        "decisions":  results,
+    }
 
 
 # Serve built React app in production (SPA catch-all — must be last)
