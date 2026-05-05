@@ -139,6 +139,85 @@ _FSM_TRIGGER: dict[str, str] = {
     "RESOLVED": "resolve",
 }
 
+# Tighter output caps per state — terminal states need one short sentence, not 2 k tokens
+_STATE_MAX_TOKENS: dict[str, int] = {
+    "TRIAGE":        512,
+    "INVESTIGATING": 1024,
+    "HYPOTHESIZING": 512,
+    "REMEDIATING":   512,
+    "ESCALATING":    512,
+}
+
+
+def _compress_tool_result(tool_name: str, result: dict) -> str:
+    """Compact one-liner for a tool result — stored in message history after the first use.
+
+    Full result stays in ToolCallRecord for the evaluator / UI.
+    This version is only what gets re-sent on every subsequent API call.
+    """
+    if tool_name == "search_indexes":
+        names = [i.get("name", "") for i in result.get("indexes", [])]
+        return f"indexes={','.join(names)}"
+
+    if tool_name == "get_network_topology":
+        device = result.get("device_id", "?")
+        role   = result.get("role", "?")
+        anomalous = [i["name"] for i in result.get("interfaces", []) if i.get("anomaly")]
+        uplinks   = [i["name"] for i in result.get("interfaces", []) if i.get("role") == "uplink"]
+        return f"{device}({role}) anomalous={anomalous} uplinks={uplinks}"
+
+    if tool_name == "get_telemetry_metrics":
+        device = result.get("device_id", "?")
+        iface  = result.get("interface", "?")
+        m      = result.get("metrics", {})
+        return (
+            f"{device} {iface}: out_errors={m.get('out_errors',0)} "
+            f"in_errors={m.get('in_errors',0)} util={m.get('utilization_pct',0)}% "
+            f"drops={m.get('drops',0)} anomaly={result.get('anomaly',False)}"
+        )
+
+    if tool_name == "run_spl_query":
+        events = result.get("events", [])
+        count  = result.get("result_count", 0)
+        lines  = [f"result_count={count}"]
+        for e in events[:3]:
+            kv = " ".join(f"{k}={v}" for k, v in list(e.items())[:5])
+            lines.append(kv)
+        return " | ".join(lines)[:300]
+
+    if tool_name == "get_metadata":
+        hosts = [h.get("host", "") for h in result.get("hosts", []) if h.get("has_alerts")]
+        return f"alert_hosts={hosts}"
+
+    if tool_name == "get_user_context":
+        ip = result.get("src_ip", "?")
+        return f"{ip} known={result.get('is_known')} threat={result.get('threat_intel','none')[:60]}"
+
+    return str(result)[:200]
+
+
+def _reset_context(scenario: dict, tool_call_log: list["ToolCallRecord"], hypothesis: str) -> list[dict]:
+    """Collapse accumulated message history into a single compact context message.
+
+    Called on every state transition to prevent quadratic token growth.
+    The new state's first API call receives incident facts + compact tool summaries
+    instead of the full multi-turn conversation from the previous state.
+    """
+    lines: list[str] = [
+        f"Incident: {scenario['incident_id']} | "
+        f"Device: {scenario.get('device','?')} | "
+        f"Interface: {scenario.get('interface','?')} | "
+        f"Site: {scenario.get('site','?')}",
+        f"Description: {scenario.get('description','')}",
+    ]
+    if tool_call_log:
+        lines.append("Tool findings:")
+        for r in tool_call_log:
+            lines.append(f"  {r.tool}: {_compress_tool_result(r.tool, r.result)}")
+    if hypothesis:
+        lines.append(f"Hypothesis so far: {hypothesis}")
+    return [{"role": "user", "content": "\n".join(lines)}]
+
 
 @dataclass
 class ToolCallRecord:
@@ -273,10 +352,15 @@ class IncidentCommander:
             }
         ]
 
+        reset_on_next = False
         while self.state not in ("ESCALATING", "RESOLVED"):
+            if reset_on_next:
+                messages = _reset_context(scenario, self.tool_call_log, self.hypothesis)
+                reset_on_next = False
+
             response = self.client.messages.create(
                 model=self.model,
-                max_tokens=2048,
+                max_tokens=_STATE_MAX_TOKENS.get(self.state, 1024),
                 system=STATE_PROMPTS[self.state],
                 messages=messages,
                 tools=self._get_tools(),
@@ -306,6 +390,10 @@ class IncidentCommander:
                     transitioned = True
                     if callback:
                         callback("state_change", {"from": old_state, "to": self.state})
+                    # Schedule context reset for the next iteration.
+                    # Resetting here mid-loop would orphan the transition tool_result block.
+                    if self.state not in ("ESCALATING", "RESOLVED"):
+                        reset_on_next = True
                 else:
                     t0 = time.time()
                     result = self._call_tool(block.name, block.input)
@@ -333,7 +421,9 @@ class IncidentCommander:
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,
-                        "content": json.dumps(result),
+                        # Compressed result in message content — enough for the model to reason,
+                        # not the full JSON that would bloat the re-sent context on the next call.
+                        "content": _compress_tool_result(block.name, result),
                     })
 
             if tool_results:
