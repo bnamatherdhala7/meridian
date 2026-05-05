@@ -8,6 +8,20 @@
   "vlan": 100,
   "reported_at": "2024-02-14T14:35:00Z",
   "severity": "P2",
+  "alert": {
+    "alert_id": "ALT-20240214-001",
+    "alert_type": "interface_error_spike",
+    "raw_severity": "high",
+    "signal_count": 3,
+    "repeat_count_last_hour": 0,
+    "source_ip": "10.14.22.87",
+    "timestamp": "2024-02-14T14:32:00Z",
+    "device": "sj-catalyst-01",
+    "correlated_signals": [
+      {"device": "sj-catalyst-01", "source_ip": "10.14.22.87", "timestamp": "2024-02-14T14:30:00Z"},
+      {"device": "sj-catalyst-01", "source_ip": "10.14.22.87", "timestamp": "2024-02-14T14:31:00Z"}
+    ]
+  },
   "ground_truth": {
     "anomalous_device": "sj-catalyst-01",
     "anomalous_interface": "GigE0/1",

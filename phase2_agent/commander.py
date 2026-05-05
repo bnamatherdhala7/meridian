@@ -18,6 +18,7 @@ from phase1_mcp.tools.sp import (
     run_spl_query,
     search_indexes,
 )
+from phase2_agent.pre_triage import AlertReScorer
 from phase2_agent.prompts import STATE_PROMPTS
 from phase2_agent.states import STATES, TRANSITIONS, VALID_TRANSITIONS
 
@@ -178,12 +179,17 @@ def _compress_tool_result(tool_name: str, result: dict) -> str:
 
     if tool_name == "run_spl_query":
         events = result.get("events", [])
-        count  = result.get("result_count", 0)
+        stats  = result.get("stats", {})
+        count  = result.get("result_count", len(events))
         lines  = [f"result_count={count}"]
-        for e in events[:3]:
-            kv = " ".join(f"{k}={v}" for k, v in list(e.items())[:5])
+        for e in events[:2]:
+            kv = " ".join(f"{k}={v}" for k, v in list(e.items())[:6])
             lines.append(kv)
-        return " | ".join(lines)[:300]
+        # Always include key stats fields — safe_fix, cause, note are decision-critical
+        for key in ("safe_fix", "cause", "root_cause", "is_security_threat", "anomaly", "note", "flap_count"):
+            if key in stats:
+                lines.append(f"stats.{key}={str(stats[key])[:80]}")
+        return " | ".join(lines)[:400]
 
     if tool_name == "get_metadata":
         hosts = [h.get("host", "") for h in result.get("hosts", []) if h.get("has_alerts")]
@@ -319,7 +325,8 @@ class IncidentCommander:
         if trigger:
             getattr(self, trigger)()
 
-        self.hypothesis = reason
+        if reason:
+            self.hypothesis = reason
         self.confidence = conf
         if reason and next_state in ("ESCALATING", "REMEDIATING"):
             self.evidence.append(reason)
@@ -332,6 +339,57 @@ class IncidentCommander:
         callback: Callable[[str, Any], None] | None = None,
     ) -> IncidentReport:
         start = time.time()
+
+        # PRE_TRIAGE: rules-based re-scoring, 0 tokens
+        # Run when scenario carries raw alert data; skip for legacy investigation scenarios.
+        pre_triage_result = None
+        if "alert" in scenario:
+            self.start_pre_triage()
+            if callback:
+                callback("state_change", {"state": self.state})
+            scorer = AlertReScorer()
+            pre_triage_result = scorer.score(scenario["alert"])
+            if callback:
+                callback("pre_triage", {"result": pre_triage_result.model_dump()})
+
+            if pre_triage_result.recommended_action == "suppress":
+                self.suppress()
+                if callback:
+                    callback("state_change", {"state": self.state})
+                return IncidentReport(
+                    incident_id=scenario["incident_id"],
+                    final_state=self.state,
+                    hypothesis=pre_triage_result.suppression_reason or "Suppressed by PRE_TRIAGE rules engine",
+                    evidence=[pre_triage_result.scoring_rationale],
+                    tool_calls=0,
+                    tool_call_log=[],
+                    recommended_action="suppress",
+                    confidence=pre_triage_result.confidence_score,
+                    total_tokens=0,
+                    input_tokens=0,
+                    output_tokens=0,
+                    duration_secs=round(time.time() - start, 2),
+                    incident_description=scenario.get("description", ""),
+                )
+            elif pre_triage_result.escalate_immediately:
+                self.escalate()
+                if callback:
+                    callback("state_change", {"state": self.state})
+                return IncidentReport(
+                    incident_id=scenario["incident_id"],
+                    final_state=self.state,
+                    hypothesis=pre_triage_result.scoring_rationale,
+                    evidence=[pre_triage_result.scoring_rationale],
+                    tool_calls=0,
+                    tool_call_log=[],
+                    recommended_action="escalate — immediate, bypassed FSM investigation",
+                    confidence=pre_triage_result.confidence_score,
+                    total_tokens=0,
+                    input_tokens=0,
+                    output_tokens=0,
+                    duration_secs=round(time.time() - start, 2),
+                    incident_description=scenario.get("description", ""),
+                )
 
         self.start_triage()
         if callback:
@@ -353,10 +411,14 @@ class IncidentCommander:
         ]
 
         reset_on_next = False
-        while self.state not in ("ESCALATING", "RESOLVED"):
+        while self.state not in ("ESCALATING", "RESOLVED", "SUPPRESSED"):
             if reset_on_next:
                 messages = _reset_context(scenario, self.tool_call_log, self.hypothesis)
                 reset_on_next = False
+
+            # API requires conversation ends with a user message
+            if messages and messages[-1]["role"] == "assistant":
+                messages.append({"role": "user", "content": "Continue the investigation."})
 
             response = self.client.messages.create(
                 model=self.model,

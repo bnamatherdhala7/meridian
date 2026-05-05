@@ -8,9 +8,25 @@ Source: CTIBench NeurIPS 2024; arxiv:2603.18196 (retrieval-augmented security LL
 from __future__ import annotations
 
 import anthropic
+from pydantic import BaseModel, Field
 
 from phase2_agent.commander import IncidentReport
+from phase2_agent.pre_triage import AlertReScorer
 from phase3_evaluator.models import constrained, generic
+
+
+class BatchResult(BaseModel):
+    """Aggregate metrics for a batch of PRE_TRIAGE-scored alerts."""
+    total_alerts:              int
+    suppressed:                int
+    investigated:              int
+    monitored:                 int
+    suppression_rate:          float   # 0.0–1.0
+    avg_confidence_investigated: float  # mean confidence of alerts that passed to TRIAGE
+    tokens_saved:              int     # tokens saved vs sending all alerts to FSM (est. 2 000/alert)
+    cost_saved_usd:            float   # at claude-sonnet-4-6 input pricing
+    escalated_immediately:     int     # alerts that bypassed FSM → direct human escalation
+    alert_details:             list[dict] = Field(default_factory=list)
 
 # claude-sonnet-4-6 pricing
 _COST_INPUT_PER_1K = 0.003
@@ -154,3 +170,75 @@ def evaluate(report: IncidentReport) -> dict:
             (1 - con["total_tokens"] / max(report.total_tokens, 1)) * 100, 1
         ),
     }
+
+
+# ── Tokens saved estimate ─────────────────────────────────────────────────────
+# Conservative baseline: a minimal TRIAGE + one tool call costs ~2 000 tokens.
+# Suppressing an alert before FSM entry saves at least this much.
+_TOKENS_SAVED_PER_SUPPRESSION = 2_000
+
+
+def batch_evaluate(alerts: list[dict]) -> BatchResult:
+    """Run PRE_TRIAGE rules-engine on a batch of alerts and report suppression metrics.
+
+    No LLM calls are made — this is entirely deterministic.  The metrics surface
+    the ROI of the PRE_TRIAGE gate: how many alerts were filtered, how many tokens
+    were saved, and what the average confidence was for alerts that passed through.
+
+    Args:
+        alerts: list of raw alert dicts (same schema as AlertReScorer.score input).
+
+    Returns:
+        BatchResult with suppression_rate, tokens_saved, cost_saved_usd, etc.
+    """
+    scorer = AlertReScorer()
+    details: list[dict] = []
+
+    suppressed_count   = 0
+    investigated_count = 0
+    monitored_count    = 0
+    escalated_count    = 0
+    confidence_investigated: list[float] = []
+
+    for alert in alerts:
+        result = scorer.score(alert)
+        details.append({
+            "alert_id":             result.alert_id,
+            "confidence_band":      result.confidence_band,
+            "confidence_score":     result.confidence_score,
+            "recommended_action":   result.recommended_action,
+            "escalate_immediately": result.escalate_immediately,
+            "suppression_reason":   result.suppression_reason,
+            "scoring_rationale":    result.scoring_rationale,
+        })
+
+        if result.escalate_immediately:
+            escalated_count += 1
+            investigated_count += 1
+            confidence_investigated.append(result.confidence_score)
+        elif result.recommended_action == "suppress":
+            suppressed_count += 1
+        elif result.recommended_action == "investigate":
+            investigated_count += 1
+            confidence_investigated.append(result.confidence_score)
+        else:
+            monitored_count += 1
+
+    total = len(alerts)
+    suppression_rate = round(suppressed_count / total, 3) if total else 0.0
+    avg_conf = round(sum(confidence_investigated) / len(confidence_investigated), 3) if confidence_investigated else 0.0
+    tokens_saved = suppressed_count * _TOKENS_SAVED_PER_SUPPRESSION
+    cost_saved   = round(tokens_saved / 1000 * _COST_INPUT_PER_1K, 4)
+
+    return BatchResult(
+        total_alerts               = total,
+        suppressed                 = suppressed_count,
+        investigated               = investigated_count,
+        monitored                  = monitored_count,
+        suppression_rate           = suppression_rate,
+        avg_confidence_investigated= avg_conf,
+        tokens_saved               = tokens_saved,
+        cost_saved_usd             = cost_saved,
+        escalated_immediately      = escalated_count,
+        alert_details              = details,
+    )

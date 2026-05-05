@@ -1,21 +1,32 @@
 {
   "incident_id": "INC-20240215-002",
-  "title": "BGP peer session flapping — San Jose WAN edge",
-  "description": "BGP peer session between sj-edge-01 and upstream ISP (upstream-isp-01) has been flapping for the past 25 minutes. 23 BGP session drops recorded since 14:05 UTC. Partial route table withdrawals are causing intermittent connectivity loss to external destinations from the San Jose site.",
+  "title": "BGP session flapping on sj-edge-01 / GigE0/0",
+  "description": "BGP session to upstream ISP peer 203.0.113.1 flapping on sj-edge-01 GigE0/0. 23 flaps since 14:05 UTC. Hold timer expiry pattern detected.",
   "device": "sj-edge-01",
   "interface": "GigE0/0",
   "site": "San Jose",
-  "vlan": null,
-  "reported_at": "2024-02-15T14:30:00Z",
   "severity": "P2",
+  "reported_at": "2024-02-15T14:30:00Z",
+  "expected_fsm_path": ["IDLE", "TRIAGE", "INVESTIGATING", "HYPOTHESIZING", "REMEDIATING", "RESOLVED"],
+  "expected_final_state": "REMEDIATING",
+  "alert": {
+    "alert_id": "ALT-20240215-002",
+    "alert_type": "bgp_session_down",
+    "raw_severity": "medium",
+    "signal_count": 2,
+    "repeat_count_last_hour": 1,
+    "source_ip": "",
+    "timestamp": "2024-02-15T14:30:00Z",
+    "device": "sj-edge-01",
+    "correlated_signals": [
+      {"device": "sj-edge-01", "timestamp": "2024-02-15T14:28:00Z"}
+    ]
+  },
   "ground_truth": {
-    "anomalous_device": "sj-edge-01",
-    "anomalous_interface": "GigE0/0",
-    "error_type": "mtu_mismatch",
-    "spike_time": "2024-02-15T14:05:00Z",
-    "root_cause": "MTU mismatch: sj-edge-01 GigE0/0 negotiated 1500, ISP expects 1480 (MPLS overhead)",
-    "expected_final_state": "REMEDIATING",
-    "expected_tool_calls": 5,
-    "safe_remediation": "ip mtu 1480 on GigE0/0"
+    "root_cause": "mtu_mismatch",
+    "affected_component": "sj-edge-01 GigE0/0 — BGP peer 203.0.113.1",
+    "is_security_threat": false,
+    "recommended_action": "Apply 'ip mtu 1480' on sj-edge-01 GigE0/0 — ISP MPLS overhead requires MTU 1480, currently 1500",
+    "confidence_threshold": 0.82
   }
 }

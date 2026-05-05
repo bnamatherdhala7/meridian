@@ -7,6 +7,7 @@ interface Props {
 function stateBadgeClass(state: string): string {
   if (state === 'ESCALATING') return 'report-state-badge escalating'
   if (state === 'REMEDIATING' || state === 'RESOLVED') return 'report-state-badge remediating'
+  if (state === 'SUPPRESSED') return 'report-state-badge suppressed'
   return 'report-state-badge default'
 }
 

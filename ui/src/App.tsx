@@ -1,5 +1,5 @@
 import { useCallback, useReducer, useRef, useState } from 'react'
-import type { AppStatus, EvalResults, FSMState, IncidentReport, ScenarioMeta, SSEEvent, ToolCall } from './types'
+import type { AppStatus, EvalResults, FSMState, IncidentReport, MTTDData, PreTriageEntry, ScenarioMeta, SSEEvent, ToolCall } from './types'
 import FSMDiagram from './components/FSMDiagram'
 import ToolCallFeed from './components/ToolCallFeed'
 import EvidencePanel from './components/EvidencePanel'
@@ -15,6 +15,8 @@ interface State {
   totalTokens: number
   report: IncidentReport | null
   evalResults: EvalResults | null
+  mttdData: MTTDData | null
+  preTriageEntry: PreTriageEntry | null
   error: string | null
 }
 
@@ -27,6 +29,8 @@ const INITIAL: State = {
   totalTokens: 0,
   report: null,
   evalResults: null,
+  mttdData: null,
+  preTriageEntry: null,
   error: null,
 }
 
@@ -34,8 +38,10 @@ type Action =
   | { type: 'RESET' }
   | { type: 'STATE_CHANGE'; state: FSMState }
   | { type: 'TOOL_CALL'; call: ToolCall }
+  | { type: 'PRE_TRIAGE'; entry: PreTriageEntry }
   | { type: 'REPORT'; report: IncidentReport }
   | { type: 'EVAL_RESULTS'; results: EvalResults }
+  | { type: 'MTTD'; data: MTTDData }
   | { type: 'SET_STATUS'; status: AppStatus }
   | { type: 'ERROR'; message: string }
 
@@ -63,6 +69,10 @@ function reducer(state: State, action: Action): State {
       }
     case 'EVAL_RESULTS':
       return { ...state, evalResults: action.results, status: 'done' }
+    case 'PRE_TRIAGE':
+      return { ...state, preTriageEntry: action.entry }
+    case 'MTTD':
+      return { ...state, mttdData: action.data }
     case 'SET_STATUS':
       return { ...state, status: action.status }
     case 'ERROR':
@@ -107,6 +117,15 @@ const SCENARIOS: ScenarioMeta[] = [
     site: 'San Jose',
     title: 'CPU 94% on sj-core-01, BGP/STP degraded',
     expected_path: 'ESCALATING',
+  },
+  {
+    id: 'false_positive',
+    label: 'False Positive',
+    incident_id: 'INC-20240214-003',
+    severity: 'P3',
+    site: 'San Jose',
+    title: 'CPU threshold_breach — 5 repeat fires, no corroboration',
+    expected_path: 'SUPPRESSED',
   },
 ]
 
@@ -163,6 +182,26 @@ export default function App() {
         case 'eval_results':
           dispatch({ type: 'EVAL_RESULTS', results: event.data })
           break
+        case 'pre_triage':
+          dispatch({
+            type: 'PRE_TRIAGE',
+            entry: {
+              alert_id: event.alert_id,
+              alert_type: event.alert_type,
+              confidence_band: event.confidence_band as PreTriageEntry['confidence_band'],
+              confidence_score: event.confidence_score,
+              signal_strength: event.signal_strength,
+              recommended_action: event.recommended_action as PreTriageEntry['recommended_action'],
+              suppression_reason: event.suppression_reason,
+              escalate_immediately: event.escalate_immediately,
+              scoring_rationale: event.scoring_rationale,
+              tokens_used: 0,
+            },
+          })
+          break
+        case 'mttd':
+          dispatch({ type: 'MTTD', data: event.data })
+          break
         case 'error':
           dispatch({ type: 'ERROR', message: event.message })
           es.close()
@@ -188,7 +227,7 @@ export default function App() {
     dispatch({ type: 'SET_STATUS', status: 'idle' })
   }, [state.status])
 
-  const { status, fsmState, fsmHistory, toolCalls, evidence, totalTokens, report, evalResults, error } = state
+  const { status, fsmState, fsmHistory, toolCalls, evidence, totalTokens, report, evalResults, mttdData, preTriageEntry, error } = state
   const busy = status === 'running' || status === 'evaluating'
 
   return (
@@ -233,6 +272,12 @@ export default function App() {
           {totalTokens > 0 && (
             <span className="header-tokens">
               <span>{totalTokens.toLocaleString()}</span> tokens
+            </span>
+          )}
+          {mttdData && (
+            <span className="header-mttd" title={mttdData.headline}>
+              <span className="header-mttd-value">{mttdData.mttr_speedup_pct.toFixed(0)}%</span>
+              {' '}faster · {Math.round(mttdData.mttr_vigil_s)}s vs {Math.round(mttdData.mttr_baseline_s / 60)}min
             </span>
           )}
           <span className={`status-pill ${status}`}>{STATUS_LABEL[status]}</span>
@@ -282,7 +327,7 @@ export default function App() {
               )}
             </div>
             <div className="card-body">
-              <ToolCallFeed calls={toolCalls} />
+              <ToolCallFeed calls={toolCalls} preTriageEntry={preTriageEntry} />
             </div>
           </div>
 

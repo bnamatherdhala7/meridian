@@ -132,6 +132,25 @@ Splunk's official MCP server ([docs](https://help.splunk.com/en/splunk-cloud-pla
 
 ---
 
+## SAIA vs. Vigil — Capability Boundary
+
+SP's `saia_*` tools (collectively called SAIA) are the AI-assisted SPL layer built into the MCP server. They generate, explain, and optimize queries. Understanding exactly where SAIA stops is the clearest way to explain where Vigil starts.
+
+| Capability | SAIA (SP's built-in assistant) | Status | Vigil |
+|---|---|:---:|---|
+| **SPL generation** — NL → query | Generates SPL from natural language. Uses RAG + fine-tuned model. Asks clarifying questions for ambiguous prompts. | Ships in SAIA | Calls `saia_generate_spl` via MCP. Does not re-implement — consumes the output. |
+| **SPL optimization** — performance tuning | Rewrites queries to run faster and use fewer resources. GA in v1.4. | Ships in SAIA | Calls `saia_optimize_spl`. No opinion on result quality — passes it through. |
+| **Query execution** — run + return results | Does NOT execute queries. Human must copy SPL and run it manually. | ❌ Hard stop | Executes via `splunk_run_query` MCP tool. This is where Vigil starts adding value. |
+| **Multi-step reasoning** — chained queries | Single-turn only: one prompt → one SPL. No chaining across multiple queries or data sources. | ❌ Hard stop | FSM drives PLAN→ACT→OBSERVE across 5 tool calls, cross-referencing netflow + topology + security logs. |
+| **Cross-domain context** — CI + SP | Splunk data only. No awareness of CI topology, device telemetry, or network-layer context. | ❌ Hard stop | Bridges CI Catalyst topology + telemetry into the same investigation context. |
+| **Escalate vs. remediate** — decision logic | No decision logic. Returns SPL + explanation. Human decides what to do with it. | ❌ Hard stop | FSM decision at HYPOTHESIZING: threshold rules route to REMEDIATING or ESCALATING. |
+| **Query cost scoring** — token + resource cost | 3,000 prompt/month org limit surfaced. No per-query token cost shown to user. | Limit only | Phase 3 Evaluator scores tokens, cost, precision, recall per run. Side-by-side comparison. |
+| **SPL quality scoring** — validate before run | Token + structural similarity used internally. Not exposed to user. | Internal only | Not in v1 — documented as roadmap item (SPL Quality Gate, see below). |
+
+The pattern is consistent: SAIA generates and explains. Vigil decides, executes, and scores.
+
+---
+
 ## The Solution — Three Phases
 
 ### Phase 1 — MCP Bridge Layer
@@ -246,6 +265,64 @@ Scores every run across five dimensions. Designed to answer: "Was that investiga
 | Phase 2 | FSM commander | All 3 reference incidents run end-to-end, correct final state |
 | Phase 3 | Evaluator | Scores both modes on all 5 dimensions, token delta visible |
 | Demo | War room UI | Scenario selector, live FSM transitions, tool traces, eval panel |
+
+---
+
+## Enhancement Roadmap — SAIA Optimization Layer
+
+Three concrete optimizations Vigil can layer on top of SAIA's generated output. These are not in v1 — they are the documented next phase.
+
+### Optimization 1 — SPL Quality Gate: Score Before Execute
+
+SAIA generates SPL but provides no quality signal before the query runs. Vigil can intercept the generated SPL and score it on three dimensions before passing it to `splunk_run_query`:
+
+- **Structural validity** — correct SPL command sequence and syntax
+- **Field coverage** — do the referenced fields exist in the target index?
+- **Resource cost estimate** — targeted filters or full index scan?
+
+Queries below threshold are rejected and regenerated — not executed against production data.
+
+```python
+# phase1_mcp/spl_gate.py
+score_spl(query, target_index) → SPLScore
+# Calls saia_optimize_spl first, then scores the optimized version
+# Blocks execution if: structural_score < 0.7 or field_coverage < 0.6
+```
+
+### Optimization 2 — Investigation-Aware SPL: Context Injection
+
+SAIA generates generic SPL from a cold prompt. It has no awareness of the current FSM state, prior tool call results, or the incident context. Vigil can prepend investigation context to every `saia_generate_spl` call:
+
+> *"We are in INVESTIGATING state. Prior telemetry shows out_errors=2847 on GigE0/1. Generate SPL for egress traffic patterns on vlan=100 in the last 30 minutes."*
+
+The result is dramatically more targeted than a cold prompt — and uses fewer tokens because it does not return irrelevant data.
+
+```python
+# phase2_agent/prompts.py
+build_spl_context(fsm_state, prior_results) → str
+# Prepended to every saia_generate_spl call in the FSM loop
+```
+
+### Optimization 3 — SPL Result Interpreter: Close the Loop SAIA Leaves Open
+
+SAIA's hardest stop: it generates and explains SPL but never interprets the results. A human still reads the query output and decides what it means. Vigil already does this implicitly in the OBSERVE step — making it explicit as a typed, reusable component produces a structured `Finding` that feeds directly into the `HYPOTHESIZING` state.
+
+```python
+# phase2_agent/result_interpreter.py
+interpret(raw_results, incident_context) → Finding
+# Finding fields: anomaly_detected, signal_strength, key_values, noise_pct, feeds_hypothesis
+```
+
+### Bonus — SPL Cache: Reduce SAIA Prompt Consumption 40–60%
+
+SAIA has a 3,000 prompt/month org limit. In batch investigations across hundreds of daily alerts, Vigil calls `saia_generate_spl` repeatedly for structurally similar incidents — every packet-loss event on a Catalyst switch generates roughly the same netflow query. A SQLite-backed cache keyed on `(incident_type, device_role, fsm_state)` serves cached SPL for known patterns and calls SAIA only on misses.
+
+```python
+# phase1_mcp/spl_cache.py
+# SQLite-backed, TTL=24h
+# Key: hash(incident_type + fsm_state + index_name)
+# Falls through to saia_generate_spl on cache miss
+```
 
 ---
 

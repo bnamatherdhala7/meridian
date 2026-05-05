@@ -55,6 +55,21 @@ Splunk's MCP server ([GA, v1.1](https://help.splunk.com/en/splunk-cloud-platform
 | **RBAC passthrough** | ✅ | — | Preserved — no privilege escalation added |
 | **OAuth 2.0** | 🗓 Roadmap | Not yet shipped | Stub documented, ready to wire in |
 
+### SAIA vs. Vigil — Where Each Starts and Stops
+
+SP's `saia_*` tools (SAIA) generate, explain, and optimize SPL. Vigil consumes SAIA's output and picks up exactly where SAIA stops.
+
+| Capability | SAIA (SP built-in) | Vigil |
+|---|---|---|
+| SPL generation | ✅ NL → query. Asks clarifying questions for ambiguous prompts. | Calls `saia_generate_spl`. Does not re-implement — consumes the output. |
+| SPL optimization | ✅ Rewrites queries for performance (GA in v1.4). | Calls `saia_optimize_spl`. No opinion on result quality — passes it through. |
+| Query execution | ❌ **Hard stop** — human must copy SPL and run it manually. | ✅ Executes via `splunk_run_query`. This is where Vigil starts adding value. |
+| Multi-step reasoning | ❌ **Hard stop** — single-turn. One prompt → one SPL. No chaining. | ✅ FSM drives 5 tool calls across netflow, topology, and security logs. |
+| Cross-domain context | ❌ **Hard stop** — Splunk data only. No CI topology or device telemetry. | ✅ Bridges CI Catalyst topology + telemetry into the same investigation loop. |
+| Escalate vs. remediate | ❌ **Hard stop** — returns SPL + explanation. Human decides what to do. | ✅ FSM threshold rules route to `REMEDIATING` or `ESCALATING`. |
+| Token cost per run | ❌ 3,000 prompt/month org limit surfaced — no per-query cost shown. | ✅ Phase 3 Evaluator scores tokens, cost, precision, and recall per run. |
+| SPL quality before execute | ❌ Internal similarity scoring — not exposed to the user. | 🗓 Roadmap — SPL Quality Gate (see Enhancement Roadmap below) |
+
 ---
 
 ## What Vigil Does
@@ -228,6 +243,45 @@ python -m phase2_agent.commander --scenario phase2_agent/scenarios/packet_loss_s
 | [docs/prd.md](docs/prd.md) | VP-level product requirements — market gap, solution, roadmap alignment |
 | [CLAUDE.md](CLAUDE.md) | Architecture decisions, hard rules, command reference |
 | [phase2_agent/scenarios/packet_loss_sj.json](phase2_agent/scenarios/packet_loss_sj.json) | Reference incident for demo |
+
+---
+
+## Enhancement Roadmap — SAIA Optimization Layer
+
+Three concrete additions Vigil can layer on top of SAIA's output. Not in v1 — documented as the next phase of development.
+
+### 1. SPL Quality Gate — Score Before Execute
+
+SAIA generates SPL but never tells you if it's good. Vigil can intercept generated SPL before calling `splunk_run_query` and score it on three dimensions: structural validity (correct command sequence), field coverage (do referenced fields exist in the target index?), and estimated resource cost (targeted filters vs. full index scan). Queries below threshold are rejected and regenerated — not executed.
+
+```python
+# phase1_mcp/spl_gate.py
+score_spl(query, target_index) → SPLScore
+# Calls saia_optimize_spl first, then scores before execution
+# Blocks: structural_score < 0.7 or field_coverage < 0.6
+```
+
+### 2. Investigation-Aware SPL — Context Injection
+
+SAIA generates generic SPL from a cold prompt with no awareness of FSM state, prior tool results, or incident metadata. Vigil can prepend investigation context to every `saia_generate_spl` call — current state, prior telemetry readings, target VLAN — making the generated SPL dramatically more targeted and reducing token waste from irrelevant results.
+
+```python
+# phase2_agent/prompts.py
+build_spl_context(fsm_state, prior_results) → str
+# Prepended to every saia_generate_spl call in the FSM loop
+```
+
+### 3. SPL Result Interpreter — Close the Loop SAIA Leaves Open
+
+SAIA's hardest stop: it generates and explains SPL but never interprets the results. A human still reads the output and decides what it means. Vigil already does this implicitly in the OBSERVE step — making it explicit as a reusable component produces a structured `Finding` that feeds directly into `HYPOTHESIZING`.
+
+```python
+# phase2_agent/result_interpreter.py
+interpret(raw_results, incident_context) → Finding
+# Finding fields: anomaly_detected, signal_strength, key_values, noise_pct
+```
+
+**Bonus — SPL Cache:** SAIA has a 3,000 prompt/month org limit. Batch investigations call `saia_generate_spl` repeatedly for similar incident types (every packet-loss alert generates roughly the same netflow query). A SQLite cache keyed on `(incident_type, device_role, fsm_state)` serves cached SPL for known patterns and calls SAIA only on misses — reducing SAIA prompt consumption 40–60% at scale.
 
 ---
 

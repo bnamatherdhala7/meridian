@@ -8,6 +8,21 @@
   "vlan": null,
   "reported_at": "2024-02-15T15:12:00Z",
   "severity": "P1",
+  "alert": {
+    "alert_id": "ALT-20240215-003",
+    "alert_type": "high_cpu_process",
+    "raw_severity": "critical",
+    "signal_count": 4,
+    "repeat_count_last_hour": 0,
+    "source_ip": "",
+    "timestamp": "2024-02-15T15:12:00Z",
+    "device": "sj-core-01",
+    "correlated_signals": [
+      {"device": "sj-core-01", "timestamp": "2024-02-15T15:10:00Z"},
+      {"device": "sj-core-01", "timestamp": "2024-02-15T15:08:00Z"},
+      {"device": "sj-core-01", "timestamp": "2024-02-15T15:06:00Z"}
+    ]
+  },
   "ground_truth": {
     "anomalous_device": "sj-core-01",
     "anomalous_interface": "all",

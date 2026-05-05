@@ -1,0 +1,35 @@
+{
+  "incident_id": "INC-20240214-003",
+  "title": "CPU Warning threshold_breach on sj-core-01",
+  "description": "CPU utilization crossed 75% threshold on sj-core-01. Single alert, no correlated anomalies. Same alert fired 5 times in the last hour without escalation.",
+  "device": "sj-core-01",
+  "interface": "Loopback0",
+  "site": "San Jose",
+  "severity": "P3",
+  "reported_at": "2024-02-14T16:45:00Z",
+
+  "alert": {
+    "alert_id": "ALT-20240214-009",
+    "alert_type": "threshold_breach",
+    "raw_severity": "low",
+    "source_ip": "",
+    "signal_count": 1,
+    "repeat_count_last_hour": 5,
+    "correlated_signals": [],
+    "timestamp": "2024-02-14T16:45:00Z",
+    "device": "sj-core-01",
+    "metric": "cpu_utilization",
+    "value": 76.2,
+    "threshold": 75.0
+  },
+
+  "pre_triage": {
+    "expected_confidence_band": "low",
+    "expected_action": "suppress",
+    "expected_final_state": "SUPPRESSED",
+    "tokens_used": 0,
+    "suppression_rationale": "threshold_breach with no corroboration; single signal; 5 repeat fires in last hour with no escalation"
+  },
+
+  "_comment": "This scenario should be SUPPRESSED by PRE_TRIAGE without spending any tokens. It demonstrates the 35-40% alert noise reduction: common CPU threshold alerts that fire repeatedly and never escalate are filtered before the FSM loop even starts."
+}

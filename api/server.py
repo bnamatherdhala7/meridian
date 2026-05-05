@@ -28,6 +28,9 @@ from phase2_agent.commander import IncidentCommander
 from phase2_5_classifier import AlertClassifier
 from phase2_5_classifier.models import Alert
 from phase3_evaluator import evaluator
+from phase3_evaluator.mttd import MTTDTracker
+
+_mttd_tracker = MTTDTracker()
 
 app = FastAPI(title="Vigil API")
 app.add_middleware(
@@ -40,9 +43,10 @@ app.add_middleware(
 _SCENARIOS_DIR = Path(__file__).parent.parent / "phase2_agent/scenarios"
 
 _SCENARIO_REGISTRY: dict[str, dict] = {
-    "packet_loss": json.loads((_SCENARIOS_DIR / "packet_loss_sj.json").read_text()),
-    "bgp_flap":    json.loads((_SCENARIOS_DIR / "bgp_flap_sj.json").read_text()),
-    "cpu_spike":   json.loads((_SCENARIOS_DIR / "cpu_spike_sj.json").read_text()),
+    "packet_loss":       json.loads((_SCENARIOS_DIR / "packet_loss_sj.json").read_text()),
+    "bgp_flap":          json.loads((_SCENARIOS_DIR / "bgp_flap_sj.json").read_text()),
+    "cpu_spike":         json.loads((_SCENARIOS_DIR / "cpu_spike_sj.json").read_text()),
+    "false_positive":    json.loads((_SCENARIOS_DIR / "false_positive_demo.json").read_text()),
 }
 
 _SCENARIO_META = {
@@ -72,6 +76,15 @@ _SCENARIO_META = {
         "site": "San Jose",
         "title": "CPU 94% on sj-core-01, BGP/STP degraded",
         "expected_path": "ESCALATING",
+    },
+    "false_positive": {
+        "id": "false_positive",
+        "label": "False Positive",
+        "incident_id": "INC-20240214-003",
+        "severity": "P3",
+        "site": "San Jose",
+        "title": "CPU threshold_breach on sj-core-01 (5 repeat fires, no corroboration)",
+        "expected_path": "SUPPRESSED",
     },
 }
 
@@ -165,6 +178,21 @@ async def run_investigation(scenario: str = Query(default="packet_loss")) -> Str
                 if "from" in data:
                     event["from_state"] = data["from"]
                 q.put(event)
+            elif event_type == "pre_triage":
+                r = data.get("result", {})
+                q.put({
+                    "type": "pre_triage",
+                    "alert_id":           r.get("alert_id", ""),
+                    "alert_type":         selected.get("alert", {}).get("alert_type", ""),
+                    "confidence_band":    r.get("confidence_band", ""),
+                    "confidence_score":   r.get("confidence_score", 0),
+                    "signal_strength":    r.get("signal_strength", 0),
+                    "recommended_action": r.get("recommended_action", ""),
+                    "suppression_reason": r.get("suppression_reason"),
+                    "escalate_immediately": r.get("escalate_immediately", False),
+                    "scoring_rationale":  r.get("scoring_rationale", ""),
+                    "tokens_used":        0,
+                })
             elif event_type == "tool_call":
                 result = data.get("result", {})
                 q.put({
@@ -199,6 +227,17 @@ async def run_investigation(scenario: str = Query(default="packet_loss")) -> Str
 
             eval_results = evaluator.evaluate(report)
             q.put({"type": "eval_results", "data": eval_results})
+
+            mttd_record = _mttd_tracker.record(report, selected)
+            q.put({"type": "mttd", "data": {
+                "mttd_vigil_s":     mttd_record.mttd_vigil_s,
+                "mttr_vigil_s":     mttd_record.mttr_vigil_s,
+                "mttd_baseline_s":  mttd_record.mttd_baseline_s,
+                "mttr_baseline_s":  mttd_record.mttr_baseline_s,
+                "mttd_speedup_pct": mttd_record.mttd_speedup_pct,
+                "mttr_speedup_pct": mttd_record.mttr_speedup_pct,
+                "headline":         _mttd_tracker.summary().headline,
+            }})
         except Exception as exc:
             q.put({"type": "error", "message": str(exc)})
         finally:
@@ -222,6 +261,12 @@ async def run_investigation(scenario: str = Query(default="packet_loss")) -> Str
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.get("/api/mttd")
+async def get_mttd() -> dict:
+    """Cumulative MTTD/MTTR stats across all investigation runs this session."""
+    return _mttd_tracker.to_dict()
 
 
 @app.post("/api/classify")

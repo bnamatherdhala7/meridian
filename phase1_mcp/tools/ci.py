@@ -66,12 +66,14 @@ _TELEMETRY: dict[str, Any] = {
     },
     "sj-edge-01": {
         "GigE0/0": {
-            "in_errors": 0, "out_errors": 0, "drops": 847,
+            "in_errors": 0, "out_errors": 0, "drops": 0,
             "utilization_pct": 38.2, "speed_mbps": 1000, "status": "up",
-            "crc_errors": 1203, "mtu": 1500,
+            "mtu": 1500,
             "bgp_session_state": "Idle",
+            "bgp_down_reason": "keepalive_timeout",
             "bgp_flap_count": 23,
-            "note": "Frequent drops with CRC errors — consistent with MTU mismatch on WAN link",
+            "is_security_threat": False,
+            "note": "BGP hold timer expiry — keepalives dropped due to MTU mismatch (local=1500, ISP requires=1480). No security indicators. Fix: ip mtu 1480.",
         },
         "GigE0/1": {
             "in_errors": 0, "out_errors": 0, "drops": 0,
@@ -141,16 +143,22 @@ def get_telemetry_metrics(
         }
 
     metrics = device.get(interface, {})
+    # BGP flap with a known safe fix is an anomaly but NOT an escalation trigger.
+    # Flag anomaly only for error/utilization spikes, not for config-fixable BGP state.
     anomaly = (
         metrics.get("out_errors", 0) > 500
         or metrics.get("utilization_pct", 0) > 90
-        or metrics.get("bgp_flap_count", 0) > 5
         or metrics.get("crc_errors", 0) > 500
     )
-    return {
+    safe_to_remediate = bool(metrics.get("bgp_flap_count", 0) > 5 and not anomaly)
+    result: dict[str, Any] = {
         "device_id": device_id,
         "interface": interface,
         "time_window": time_window,
         "metrics": metrics,
         "anomaly": anomaly,
     }
+    if safe_to_remediate:
+        result["safe_to_remediate"] = True
+        result["remediation_note"] = metrics.get("note", "")
+    return result

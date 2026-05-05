@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ToolCall } from '../types'
+import type { PreTriageEntry, ToolCall } from '../types'
 
 interface Props {
   calls: ToolCall[]
+  preTriageEntry: PreTriageEntry | null
 }
 
 const TOOL_BADGE: Record<string, string> = {
@@ -27,7 +28,96 @@ const TOOL_LABEL: Record<string, string> = {
   get_telemetry_metrics: 'telemetry',
 }
 
-export default function ToolCallFeed({ calls }: Props) {
+const BAND_COLOR: Record<string, string> = {
+  high:   'var(--orange)',
+  medium: 'var(--amber)',
+  low:    'var(--violet)',
+}
+
+const ACTION_COLOR: Record<string, string> = {
+  investigate: 'var(--green)',
+  monitor:     'var(--amber)',
+  suppress:    'var(--violet)',
+}
+
+function PreTriageCard({ entry }: { entry: PreTriageEntry }) {
+  const [open, setOpen] = useState(false)
+  const score = Math.round(entry.confidence_score * 100)
+
+  return (
+    <div className="tool-item pre-triage-item" style={{ borderColor: 'rgba(6,182,212,0.25)', background: 'rgba(6,182,212,0.04)' }}>
+      <div
+        className="tool-item-top"
+        onClick={() => setOpen(v => !v)}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        <span className="tool-badge" style={{ background: 'rgba(6,182,212,0.12)', color: 'var(--teal)', border: '1px solid rgba(6,182,212,0.25)' }}>
+          00 pre_triage
+        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {entry.escalate_immediately && (
+            <div className="tool-anomaly-dot" title="Escalating immediately" />
+          )}
+          <span style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 9,
+            fontWeight: 600,
+            color: ACTION_COLOR[entry.recommended_action] ?? 'var(--muted)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}>
+            {entry.recommended_action}
+          </span>
+          <span className="tool-timing">0ms · 0 tokens</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--subtle)', lineHeight: 1 }}>
+            {open ? '▾' : '▸'}
+          </span>
+        </div>
+      </div>
+
+      {/* Summary row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+        <span className="tool-preview" style={{ flex: 1 }}>
+          {entry.alert_type} · signal_strength={entry.signal_strength} · score=
+          <span style={{ color: BAND_COLOR[entry.confidence_band] ?? 'var(--muted)', fontWeight: 600 }}>
+            {score}%
+          </span>
+          {' '}({entry.confidence_band})
+        </span>
+      </div>
+
+      {/* Expanded detail */}
+      {open && (
+        <div className="tool-trace" style={{ marginTop: 6 }}>
+          <div className="tool-trace-section">
+            <div className="tool-trace-label">SCORING RATIONALE</div>
+            <pre className="tool-trace-body">{entry.scoring_rationale}</pre>
+          </div>
+          {entry.suppression_reason && (
+            <div className="tool-trace-section">
+              <div className="tool-trace-label">SUPPRESSION REASON</div>
+              <pre className="tool-trace-body">{entry.suppression_reason}</pre>
+            </div>
+          )}
+          <div className="tool-trace-section">
+            <div className="tool-trace-label">RESULT</div>
+            <pre className="tool-trace-body">{JSON.stringify({
+              alert_id: entry.alert_id,
+              confidence_band: entry.confidence_band,
+              confidence_score: entry.confidence_score,
+              signal_strength: entry.signal_strength,
+              recommended_action: entry.recommended_action,
+              escalate_immediately: entry.escalate_immediately,
+              tokens_used: 0,
+            }, null, 2)}</pre>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function ToolCallFeed({ calls, preTriageEntry }: Props) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
@@ -44,7 +134,9 @@ export default function ToolCallFeed({ calls }: Props) {
     })
   }
 
-  if (calls.length === 0) {
+  const empty = !preTriageEntry && calls.length === 0
+
+  if (empty) {
     return (
       <div className="empty-state">
         <div className="empty-icon">⚡</div>
@@ -55,6 +147,9 @@ export default function ToolCallFeed({ calls }: Props) {
 
   return (
     <div className="tool-list">
+      {/* PRE_TRIAGE entry always first */}
+      {preTriageEntry && <PreTriageCard entry={preTriageEntry} />}
+
       {calls.map((call, i) => {
         const isExpanded = expanded.has(call.id)
         return (

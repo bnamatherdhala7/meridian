@@ -85,7 +85,7 @@ _BGP_EVENTS_RESULT = {
     "events": [
         {"_time": "2024-02-15T14:30:00Z", "device_id": "sj-edge-01", "interface": "GigE0/0",
          "event_type": "bgp_session_down", "peer_ip": "203.0.113.1", "reason": "hold_timer_expired",
-         "session_state": "Idle", "flap_count": 23},
+         "session_state": "Idle", "flap_count": 23, "is_security_event": False},
         {"_time": "2024-02-15T14:28:00Z", "device_id": "sj-edge-01", "interface": "GigE0/0",
          "event_type": "bgp_session_up", "peer_ip": "203.0.113.1", "reason": "session_established",
          "session_state": "Established", "flap_count": 22},
@@ -96,7 +96,9 @@ _BGP_EVENTS_RESULT = {
     "stats": {
         "flap_count": 23, "peer_ip": "203.0.113.1", "first_flap_at": "2024-02-15T14:05:00Z",
         "avg_session_duration_secs": 68,
-        "note": "Hold timer expiry pattern consistent with MTU mismatch — BGP keepalives dropped",
+        "root_cause": "keepalive_timeout",
+        "is_security_threat": False,
+        "note": "Hold timer expiry — NOT a security event. All flaps are keepalive_timeout, consistent with MTU mismatch. No threat intel hits on 203.0.113.1.",
     },
 }
 

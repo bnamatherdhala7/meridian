@@ -1,11 +1,36 @@
 export type FSMState =
   | 'IDLE'
+  | 'PRE_TRIAGE'
   | 'TRIAGE'
   | 'INVESTIGATING'
   | 'HYPOTHESIZING'
   | 'REMEDIATING'
   | 'ESCALATING'
   | 'RESOLVED'
+  | 'SUPPRESSED'
+
+export interface PreTriageEntry {
+  alert_id: string
+  alert_type: string
+  confidence_band: 'high' | 'medium' | 'low'
+  confidence_score: number
+  signal_strength: number
+  recommended_action: 'investigate' | 'monitor' | 'suppress'
+  suppression_reason: string | null
+  escalate_immediately: boolean
+  scoring_rationale: string
+  tokens_used: 0
+}
+
+export interface MTTDData {
+  mttd_vigil_s: number
+  mttr_vigil_s: number
+  mttd_baseline_s: number
+  mttr_baseline_s: number
+  mttd_speedup_pct: number
+  mttr_speedup_pct: number
+  headline: string
+}
 
 export interface ToolCall {
   id: string
@@ -67,5 +92,7 @@ export type SSEEvent =
   | { type: 'tool_call'; tool: string; input_preview: string; result_preview: string; input_full: string; result_full: string; duration_ms: number; anomaly: boolean }
   | { type: 'report'; data: IncidentReport }
   | { type: 'eval_results'; data: EvalResults }
+  | { type: 'pre_triage'; alert_id: string; alert_type: string; confidence_band: string; confidence_score: number; signal_strength: number; recommended_action: string; suppression_reason: string | null; escalate_immediately: boolean; scoring_rationale: string; tokens_used: 0 }
+  | { type: 'mttd'; data: MTTDData }
   | { type: 'error'; message: string }
   | { type: 'done' }
