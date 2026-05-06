@@ -22,7 +22,7 @@ This is not a prototype of what AI could do someday. It is a working implementat
 
 These five problems are validated from Splunk's own MCP documentation, Cisco DevNet's Catalyst MCP repository, and industry research. They are not hypothetical.
 
-### Problem 1 — MTTR is 4–8 Hours. It Should Be Under 30 Seconds.
+### Problem 1 — Mean Time to Resolve (MTTR) is 4–8 Hours. It Should Be Under 30 Seconds.
 
 When a network incident fires, an operator opens Splunk and stares at a search bar. They know the device. They know the interface. Getting from alert to root cause requires:
 
@@ -34,11 +34,11 @@ When a network incident fires, an operator opens Splunk and stares at a search b
 6. Escalate or fix
 
 Each step is manual. Each step requires SPL knowledge under time pressure. Industry data:
-- **Average MTTR for network incidents: 4–8 hours** (Gartner, 2024)
+- **Average Mean Time to Resolve (MTTR) for network incidents: 4–8 hours** (Gartner, 2024)
 - **60% of that time** is spent in the investigation/diagnosis phase, not the fix phase
 - **P2 incidents** (like high packet loss on a core switch) carry SLA penalties that cost more than the engineering time to fix them
 
-Vigil collapses the 4–8 hour investigation to ~18 seconds. Not by being smarter than the operator — by automating the query sequence the operator would run anyway.
+Vigil collapses the 4–8 hour MTTR to ~18 seconds. Not by being smarter than the operator — by automating the query sequence the operator would run anyway.
 
 ### Problem 2 — Splunk and Cisco Catalyst Are Never Queried Together
 
@@ -62,7 +62,7 @@ When a P2 fires at 2am, the quality of the investigation depends on:
 - Whether they apply the >60% single-source threshold before escalating
 - Whether they document their reasoning or just fix it and close the ticket
 
-The result: Inconsistent MTTR, inconsistent escalation decisions, and no way to learn from past investigations because they aren't structured.
+The result: Inconsistent Mean Time to Resolve (MTTR), inconsistent escalation decisions, and no way to learn from past investigations because they aren't structured.
 
 Vigil's FSM enforces a consistent methodology on every investigation regardless of who's on call. The same 5 tool calls in the same order, against the same evidence thresholds, every time.
 
@@ -74,7 +74,7 @@ As more teams adopt AI assistants for network ops, a new compliance gap emerges:
 - Why the agent chose to escalate vs. remediate
 - How confident it was
 
-This is a problem today for SOX and SOC2-compliant environments. It will be a bigger problem as AI takes more autonomous actions.
+This is a problem today for Sarbanes-Oxley (SOX) and SOC 2-compliant environments. It will be a bigger problem as AI takes more autonomous actions.
 
 Vigil's structured JSON output — with full FSM transition log, tool call trace, confidence score, and evidence list — is directly usable as a compliance artifact.
 
@@ -138,7 +138,7 @@ SP's `saia_*` tools (collectively called SAIA) are the AI-assisted SPL layer bui
 
 | Capability | SAIA (SP's built-in assistant) | Status | Vigil |
 |---|---|:---:|---|
-| **SPL generation** — NL → query | Generates SPL from natural language. Uses RAG + fine-tuned model. Asks clarifying questions for ambiguous prompts. | Ships in SAIA | Calls `saia_generate_spl` via MCP. Does not re-implement — consumes the output. |
+| **SPL generation** — natural language → query | Generates SPL from natural language. Uses Retrieval-Augmented Generation (RAG) + fine-tuned model. Asks clarifying questions for ambiguous prompts. | Ships in SAIA | Calls `saia_generate_spl` via MCP. Does not re-implement — consumes the output. |
 | **SPL optimization** — performance tuning | Rewrites queries to run faster and use fewer resources. GA in v1.4. | Ships in SAIA | Calls `saia_optimize_spl`. No opinion on result quality — passes it through. |
 | **Query execution** — run + return results | Does NOT execute queries. Human must copy SPL and run it manually. | ❌ Hard stop | Executes via `splunk_run_query` MCP tool. This is where Vigil starts adding value. |
 | **Multi-step reasoning** — chained queries | Single-turn only: one prompt → one SPL. No chaining across multiple queries or data sources. | ❌ Hard stop | FSM drives PLAN→ACT→OBSERVE across 5 tool calls, cross-referencing netflow + topology + security logs. |
@@ -319,7 +319,7 @@ SAIA has a 3,000 prompt/month org limit. In batch investigations across hundreds
 
 ```python
 # phase1_mcp/spl_cache.py
-# SQLite-backed, TTL=24h
+# SQLite-backed, TTL (Time to Live) = 24h
 # Key: hash(incident_type + fsm_state + index_name)
 # Falls through to saia_generate_spl on cache miss
 ```

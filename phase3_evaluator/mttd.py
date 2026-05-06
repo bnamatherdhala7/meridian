@@ -1,4 +1,5 @@
-"""MTTD / MTTR tracker — measures Vigil's speed advantage over manual NOC investigation.
+"""Mean Time to Detect (MTTD) / Mean Time to Resolve (MTTR) tracker — measures Vigil's
+speed advantage over manual Network Operations Center (NOC) investigation.
 
 Baselines derived from industry benchmarks:
   - IBM Cost of a Data Breach 2023: mean MTTD 204 days (security), ~15 min for network P2 triage
@@ -6,7 +7,7 @@ Baselines derived from industry benchmarks:
   - Cisco NOC benchmark: manual triage + investigation averages 43–62 min for Tier 1
 
 This module tracks every IncidentReport and computes:
-  - MTTD: time from incident reported_at → FSM reaches TRIAGE (Vigil detects instantly)
+  - MTTD: time from incident reported_at → Finite State Machine (FSM) reaches TRIAGE
   - MTTR: total FSM duration_secs (Vigil investigation + escalation/remediation decision)
   - Speedup vs manual baseline
   - Headline ROI string suitable for exec conversations

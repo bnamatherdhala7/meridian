@@ -7,8 +7,8 @@ This is a pure rules engine. tokens_used is intentionally 0 — the value
 proposition is that 35-40% of alerts get suppressed for free, before
 spending any tokens on investigation.
 
-Addresses Splunk's #1 customer problem: 55% of SOC teams report too many
-false positives; 46% spend more time on tool maintenance than actual defense.
+Addresses SP's #1 customer problem: 55% of Security Operations Center (SOC) teams
+report too many false positives; 46% spend more time on tool maintenance than actual defense.
 """
 from __future__ import annotations
 

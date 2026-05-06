@@ -103,8 +103,8 @@ Scenario B forces the FSM to prove it can distinguish a **security threat** (whi
 involve a human) from a **deterministic operational fault** (which can be resolved
 automatically). The gap between the two paths is the core product claim:
 
-> Vigil reduces MTTR for known-safe incidents by routing them to auto-remediation,
-> while reserving human attention for genuine threats.
+> Vigil reduces Mean Time to Resolve (MTTR) for known-safe incidents by routing them
+> to auto-remediation, while reserving human attention for genuine threats.
 
 Scenario C demonstrates the second ESCALATING path — not because of a security signal,
 but because of operational risk (unknown process, high blast radius). This proves the

@@ -67,7 +67,7 @@ SP's `saia_*` tools (SAIA) generate, explain, and optimize SPL. Vigil consumes S
 | Multi-step reasoning | ❌ **Hard stop** — single-turn. One prompt → one SPL. No chaining. | ✅ FSM drives 5 tool calls across netflow, topology, and security logs. |
 | Cross-domain context | ❌ **Hard stop** — Splunk data only. No CI topology or device telemetry. | ✅ Bridges CI Catalyst topology + telemetry into the same investigation loop. |
 | Escalate vs. remediate | ❌ **Hard stop** — returns SPL + explanation. Human decides what to do. | ✅ FSM threshold rules route to `REMEDIATING` or `ESCALATING`. |
-| Token cost per run | ❌ 3,000 prompt/month org limit surfaced — no per-query cost shown. | ✅ Phase 3 Evaluator scores tokens, cost, precision, and recall per run. |
+| Token cost per run | ❌ 3,000 prompt/month org limit surfaced — no per-query cost shown to user. | ✅ Phase 3 Evaluator scores tokens, cost, precision, and recall per run. |
 | SPL quality before execute | ❌ Internal similarity scoring — not exposed to the user. | 🗓 Roadmap — SPL Quality Gate (see Enhancement Roadmap below) |
 
 ---
