@@ -169,6 +169,31 @@ html, body {
   font-weight: 600;
 }
 
+.header-rag-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: #8B5CF6;
+  background: rgba(139,92,246,0.12);
+  border: 1px solid rgba(139,92,246,0.25);
+  border-radius: 20px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.card-rag-count {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: #8B5CF6;
+  background: rgba(139,92,246,0.12);
+  border: 1px solid rgba(139,92,246,0.25);
+  border-radius: 20px;
+  padding: 1px 7px;
+  letter-spacing: 0.04em;
+}
+
 .status-pill {
   font-family: var(--font-mono);
   font-size: 9px;

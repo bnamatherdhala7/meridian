@@ -1,5 +1,5 @@
 import { useCallback, useReducer, useRef, useState } from 'react'
-import type { AppStatus, EvalResults, FSMState, IncidentReport, MTTDData, PreTriageEntry, ScenarioMeta, SSEEvent, ToolCall } from './types'
+import type { AppStatus, EvalResults, FeedItem, FSMState, IncidentReport, MTTDData, PreTriageEntry, ScenarioMeta, SSEEvent, ToolCall } from './types'
 import FSMDiagram from './components/FSMDiagram'
 import ToolCallFeed from './components/ToolCallFeed'
 import EvidencePanel from './components/EvidencePanel'
@@ -10,13 +10,12 @@ interface State {
   status: AppStatus
   fsmState: FSMState
   fsmHistory: FSMState[]
-  toolCalls: ToolCall[]
+  feedItems: FeedItem[]
   evidence: string[]
   totalTokens: number
   report: IncidentReport | null
   evalResults: EvalResults | null
   mttdData: MTTDData | null
-  preTriageEntry: PreTriageEntry | null
   error: string | null
 }
 
@@ -24,21 +23,19 @@ const INITIAL: State = {
   status: 'idle',
   fsmState: 'IDLE',
   fsmHistory: [],
-  toolCalls: [],
+  feedItems: [],
   evidence: [],
   totalTokens: 0,
   report: null,
   evalResults: null,
   mttdData: null,
-  preTriageEntry: null,
   error: null,
 }
 
 type Action =
   | { type: 'RESET' }
   | { type: 'STATE_CHANGE'; state: FSMState }
-  | { type: 'TOOL_CALL'; call: ToolCall }
-  | { type: 'PRE_TRIAGE'; entry: PreTriageEntry }
+  | { type: 'FEED_ITEM'; item: FeedItem }
   | { type: 'REPORT'; report: IncidentReport }
   | { type: 'EVAL_RESULTS'; results: EvalResults }
   | { type: 'MTTD'; data: MTTDData }
@@ -57,8 +54,8 @@ function reducer(state: State, action: Action): State {
           ? state.fsmHistory
           : [...state.fsmHistory, action.state],
       }
-    case 'TOOL_CALL':
-      return { ...state, toolCalls: [...state.toolCalls, action.call] }
+    case 'FEED_ITEM':
+      return { ...state, feedItems: [...state.feedItems, action.item] }
     case 'REPORT':
       return {
         ...state,
@@ -69,8 +66,6 @@ function reducer(state: State, action: Action): State {
       }
     case 'EVAL_RESULTS':
       return { ...state, evalResults: action.results, status: 'done' }
-    case 'PRE_TRIAGE':
-      return { ...state, preTriageEntry: action.entry }
     case 'MTTD':
       return { ...state, mttdData: action.data }
     case 'SET_STATUS':
@@ -83,11 +78,11 @@ function reducer(state: State, action: Action): State {
 }
 
 const STATUS_LABEL: Record<AppStatus, string> = {
-  idle: 'Ready',
-  running: 'Investigating',
+  idle:       'Ready',
+  running:    'Investigating',
   evaluating: 'Evaluating',
-  done: 'Complete',
-  error: 'Error',
+  done:       'Complete',
+  error:      'Error',
 }
 
 const SCENARIOS: ScenarioMeta[] = [
@@ -138,6 +133,7 @@ export default function App() {
   const [state, dispatch] = useReducer(reducer, INITIAL)
   const [scenarioId, setScenarioId] = useState<string>('packet_loss')
   const esRef = useRef<EventSource | null>(null)
+  const seqRef = useRef(0)
 
   const selectedScenario = SCENARIOS.find(s => s.id === scenarioId) ?? SCENARIOS[0]
 
@@ -148,8 +144,8 @@ export default function App() {
     }
 
     dispatch({ type: 'RESET' })
+    seqRef.current = 0
 
-    let toolCallSeq = 0
     const es = new EventSource(`/api/run?scenario=${scenarioId}`)
     esRef.current = es
 
@@ -160,44 +156,64 @@ export default function App() {
         case 'state_change':
           if (event.state) dispatch({ type: 'STATE_CHANGE', state: event.state as FSMState })
           break
-        case 'tool_call':
+
+        case 'pre_triage': {
+          const entry: PreTriageEntry = {
+            alert_id:             event.alert_id,
+            alert_type:           event.alert_type,
+            confidence_band:      event.confidence_band as PreTriageEntry['confidence_band'],
+            confidence_score:     event.confidence_score,
+            signal_strength:      event.signal_strength,
+            recommended_action:   event.recommended_action as PreTriageEntry['recommended_action'],
+            suppression_reason:   event.suppression_reason,
+            escalate_immediately: event.escalate_immediately,
+            scoring_rationale:    event.scoring_rationale,
+            tokens_used:          0,
+          }
           dispatch({
-            type: 'TOOL_CALL',
-            call: {
-              id: `tc-${++toolCallSeq}`,
-              tool: event.tool,
-              input_preview: event.input_preview,
-              result_preview: event.result_preview,
-              input_full: event.input_full,
-              result_full: event.result_full,
-              duration_ms: event.duration_ms,
-              anomaly: event.anomaly,
-              timestamp: Date.now(),
+            type: 'FEED_ITEM',
+            item: { kind: 'pre_triage', id: `pt-${seqRef.current++}`, data: entry },
+          })
+          break
+        }
+
+        case 'rag_hit':
+          dispatch({
+            type: 'FEED_ITEM',
+            item: {
+              kind: 'rag',
+              id: `rag-${seqRef.current++}`,
+              data: {
+                layer: event.layer,
+                phase: event.phase,
+                query: event.query,
+                hits:  event.hits,
+              },
             },
           })
           break
+
+        case 'tool_call': {
+          const call: ToolCall = {
+            id:             `tc-${seqRef.current++}`,
+            tool:           event.tool,
+            input_preview:  event.input_preview,
+            result_preview: event.result_preview,
+            input_full:     event.input_full,
+            result_full:    event.result_full,
+            duration_ms:    event.duration_ms,
+            anomaly:        event.anomaly,
+            timestamp:      Date.now(),
+          }
+          dispatch({ type: 'FEED_ITEM', item: { kind: 'tool', id: call.id, data: call } })
+          break
+        }
+
         case 'report':
           dispatch({ type: 'REPORT', report: event.data })
           break
         case 'eval_results':
           dispatch({ type: 'EVAL_RESULTS', results: event.data })
-          break
-        case 'pre_triage':
-          dispatch({
-            type: 'PRE_TRIAGE',
-            entry: {
-              alert_id: event.alert_id,
-              alert_type: event.alert_type,
-              confidence_band: event.confidence_band as PreTriageEntry['confidence_band'],
-              confidence_score: event.confidence_score,
-              signal_strength: event.signal_strength,
-              recommended_action: event.recommended_action as PreTriageEntry['recommended_action'],
-              suppression_reason: event.suppression_reason,
-              escalate_immediately: event.escalate_immediately,
-              scoring_rationale: event.scoring_rationale,
-              tokens_used: 0,
-            },
-          })
           break
         case 'mttd':
           dispatch({ type: 'MTTD', data: event.data })
@@ -227,17 +243,17 @@ export default function App() {
     dispatch({ type: 'SET_STATUS', status: 'idle' })
   }, [state.status])
 
-  const { status, fsmState, fsmHistory, toolCalls, evidence, totalTokens, report, evalResults, mttdData, preTriageEntry, error } = state
+  const { status, fsmState, fsmHistory, feedItems, evidence, totalTokens, report, evalResults, mttdData, error } = state
   const busy = status === 'running' || status === 'evaluating'
+  const toolCount = feedItems.filter(f => f.kind === 'tool').length
+  const ragCount  = feedItems.filter(f => f.kind === 'rag').length
 
   return (
     <>
-      {/* Fixed header */}
       <header className="app-header">
         <span className="wordmark">VIGIL</span>
         <div className="header-divider" />
 
-        {/* Scenario selector */}
         <div className="scenario-tabs">
           {SCENARIOS.map(s => (
             <button
@@ -269,6 +285,11 @@ export default function App() {
         </div>
 
         <div className="header-right">
+          {ragCount > 0 && (
+            <span className="header-rag-badge" title="Pinecone RAG retrievals">
+              ◈ {ragCount} RAG
+            </span>
+          )}
           {totalTokens > 0 && (
             <span className="header-tokens">
               <span>{totalTokens.toLocaleString()}</span> tokens
@@ -292,7 +313,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Error banner */}
       {error && (
         <div className="error-banner">
           <span className="error-banner-icon">⚠</span>
@@ -303,9 +323,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Main content */}
       <main className={`app-main${error ? ' app-main--has-banner' : ''}`}>
-        {/* FSM diagram */}
         <div className="card fsm-card">
           <div className="card-header">
             <span className="card-title">FSM State Machine</span>
@@ -316,22 +334,24 @@ export default function App() {
           <FSMDiagram currentState={fsmState} history={fsmHistory} />
         </div>
 
-        {/* Three-column middle */}
         <div className="middle-row">
-          {/* Tool Calls */}
           <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div className="card-header">
               <span className="card-title">Tool Calls</span>
-              {toolCalls.length > 0 && (
-                <span className="card-count">{toolCalls.length}</span>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {ragCount > 0 && (
+                  <span className="card-rag-count">◈ {ragCount}</span>
+                )}
+                {toolCount > 0 && (
+                  <span className="card-count">{toolCount}</span>
+                )}
+              </div>
             </div>
             <div className="card-body">
-              <ToolCallFeed calls={toolCalls} preTriageEntry={preTriageEntry} />
+              <ToolCallFeed feedItems={feedItems} />
             </div>
           </div>
 
-          {/* Evidence */}
           <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div className="card-header">
               <span className="card-title">Evidence</span>
@@ -344,7 +364,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Report */}
           <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div className="card-header">
               <span className="card-title">Incident Report</span>
@@ -355,7 +374,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Evaluator */}
         <div className="card eval-card">
           <div className="card-header">
             <span className="card-title">Phase 3 — Evaluator</span>

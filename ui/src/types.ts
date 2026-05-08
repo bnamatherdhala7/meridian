@@ -44,6 +44,29 @@ export interface ToolCall {
   timestamp: number
 }
 
+export interface RagHitItem {
+  id: string
+  title: string
+  score: number
+  text: string
+  tags: string[]
+  phase: string | null
+  outcome: string | null
+}
+
+export interface RagEvent {
+  layer: 'SPL' | 'Incident'
+  phase: string
+  query: string
+  hits: RagHitItem[]
+}
+
+// Unified chronological feed item
+export type FeedItem =
+  | { kind: 'pre_triage'; id: string; data: PreTriageEntry }
+  | { kind: 'rag';        id: string; data: RagEvent }
+  | { kind: 'tool';       id: string; data: ToolCall }
+
 export interface IncidentReport {
   incident_id: string
   final_state: FSMState
@@ -94,5 +117,6 @@ export type SSEEvent =
   | { type: 'eval_results'; data: EvalResults }
   | { type: 'pre_triage'; alert_id: string; alert_type: string; confidence_band: string; confidence_score: number; signal_strength: number; recommended_action: string; suppression_reason: string | null; escalate_immediately: boolean; scoring_rationale: string; tokens_used: 0 }
   | { type: 'mttd'; data: MTTDData }
+  | { type: 'rag_hit'; layer: 'SPL' | 'Incident'; phase: string; query: string; hits: RagHitItem[] }
   | { type: 'error'; message: string }
   | { type: 'done' }

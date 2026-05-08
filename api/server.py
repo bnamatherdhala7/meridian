@@ -32,6 +32,85 @@ from phase3_evaluator.mttd import MTTDTracker
 
 _mttd_tracker = MTTDTracker()
 
+# ── Lazy Pinecone RAG clients ─────────────────────────────────
+_spl_rag = None
+_incident_rag = None
+_rag_lock = threading.Lock()
+
+
+def _get_rag_clients():
+    global _spl_rag, _incident_rag
+    if _spl_rag is not None:
+        return _spl_rag, _incident_rag
+    with _rag_lock:
+        if _spl_rag is not None:
+            return _spl_rag, _incident_rag
+        try:
+            from vigil.rag import SPLKnowledgeRAG, IncidentMemoryRAG
+            _spl_rag = SPLKnowledgeRAG()
+            _incident_rag = IncidentMemoryRAG()
+        except Exception:
+            pass
+    return _spl_rag, _incident_rag
+
+
+def _emit_spl_rag(scenario: dict, q: "queue.Queue[dict | None]") -> None:
+    spl_rag, _ = _get_rag_clients()
+    if not spl_rag:
+        return
+    try:
+        query = (scenario.get("title", "") + " " + scenario.get("description", ""))[:300]
+        hits = spl_rag.get_patterns(query, phase="TRIAGE", top_k=3)
+        q.put({
+            "type": "rag_hit",
+            "layer": "SPL",
+            "phase": "TRIAGE",
+            "query": query[:120],
+            "hits": [
+                {
+                    "id":      h.id,
+                    "title":   h.title,
+                    "score":   h.score,
+                    "text":    h.text[:200],
+                    "tags":    h.metadata.get("tags", []),
+                    "phase":   h.metadata.get("phase", ""),
+                    "outcome": None,
+                }
+                for h in hits
+            ],
+        })
+    except Exception:
+        pass
+
+
+def _emit_incident_rag(scenario: dict, q: "queue.Queue[dict | None]") -> None:
+    _, incident_rag = _get_rag_clients()
+    if not incident_rag:
+        return
+    try:
+        query = (scenario.get("title", "") + " " + scenario.get("description", ""))[:300]
+        hits = incident_rag.get_similar_incidents(query, top_k=3)
+        q.put({
+            "type": "rag_hit",
+            "layer": "Incident",
+            "phase": "INVESTIGATING",
+            "query": query[:120],
+            "hits": [
+                {
+                    "id":      h.id,
+                    "title":   h.title,
+                    "score":   h.score,
+                    "text":    h.text[:200],
+                    "tags":    h.metadata.get("tags", []),
+                    "phase":   None,
+                    "outcome": h.metadata.get("outcome", ""),
+                }
+                for h in hits
+            ],
+        })
+    except Exception:
+        pass
+
 app = FastAPI(title="Vigil API")
 app.add_middleware(
     CORSMiddleware,
@@ -171,13 +250,16 @@ async def run_investigation(scenario: str = Query(default="packet_loss")) -> Str
 
         def on_event(event_type: str, data: Any) -> None:
             if event_type == "state_change":
-                event: dict = {
-                    "type": "state_change",
-                    "state": data.get("to") or data.get("state"),
-                }
+                to_state = data.get("to") or data.get("state")
+                event: dict = {"type": "state_change", "state": to_state}
                 if "from" in data:
                     event["from_state"] = data["from"]
                 q.put(event)
+                # Emit RAG hits at TRIAGE and INVESTIGATING transitions
+                if to_state == "TRIAGE":
+                    _emit_spl_rag(selected, q)
+                elif to_state == "INVESTIGATING":
+                    _emit_incident_rag(selected, q)
             elif event_type == "pre_triage":
                 r = data.get("result", {})
                 q.put({
