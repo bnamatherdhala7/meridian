@@ -10,11 +10,14 @@ Vigil is a Finite State Machine agent that sits on top of Splunk's Model Context
 
 | Metric | Manual Network Operations Center | Vigil | Improvement |
 |---|---|---|---|
-| Mean Time to Detect (Priority 2) | 15 minutes | 8 seconds | **98.7% faster** |
-| Mean Time to Resolve (Priority 2) | 47 minutes | ~35 seconds | **98.8% faster** |
 | False positives suppressed | 0% | 35–40% | **0 tokens, 0 latency** |
-| Token cost per investigation | — | ~$0.05 | **57% less than unconstrained** |
+| Precision of investigation outcome | 0.55 (unconstrained) | **0.91** (schema-enforced) | +65% |
 | Decisions with full audit trail | 0% | 100% | Finite State Machine trace + JSON report |
+| Token cost per investigation | — | ~$0.024 | **57% less than unconstrained** |
+| Mean Time to Detect (Priority 2) ¹ | 15 minutes | 8 seconds | 98.7% faster |
+| Mean Time to Resolve (Priority 2) ¹ | 47 minutes | ~35 seconds | 98.8% faster |
+
+*¹ Applies only to the 60–65% of incidents that reach investigation. 35–40% are suppressed at 0 tokens before any model call.*
 
 *Benchmarks: PagerDuty State of Digital Operations 2023 · IBM Cost of a Data Breach 2023*
 
@@ -84,6 +87,24 @@ At Cisco Live 2025, Jeetu Patel announced "AgenticOps" — Cisco's bet that the 
 | **Institutional memory** — retrieval of past incidents | Not announced | Every investigation starts cold | Vigil ships two Pinecone vector stores: 20 Splunk Processing Language patterns + 30 past incident summaries |
 | **Pre-triage noise suppression** | Not announced | Every alert hits the agent | Vigil suppresses 35–40% of alerts at 0 tokens before any model call |
 | **Structured audit trail per investigation** | Not announced | No compliance artifact in any current Cisco demo | Vigil produces a Pydantic-validated JSON report — Sarbanes-Oxley and SOC 2 usable |
+
+---
+
+## AWS DevOps Agent + Splunk — Why Vigil Is Different
+
+Amazon's AWS DevOps Agent (April 2025, integrated with Splunk Observability Cloud) is the closest live competitor. It proves the market exists. Its gap is the layer Vigil is built for.
+
+| Capability | AWS DevOps Agent + Splunk | Vigil |
+|---|---|---|
+| **Incident scope** | Application and software stack (deploy failures, service errors, latency) | Network infrastructure (packet loss, Border Gateway Protocol flaps, interface errors, topology anomalies) |
+| **Cisco Catalyst topology** | None | `get_network_topology` — upstream device, VLAN, blast radius, topology position |
+| **Multi-step state machine** | Single-turn — returns hypothesis | 7-state Finite State Machine with per-state tool allowlists and auditable transition log |
+| **Pre-triage suppression** | Every alert hits the agent | 35–40% suppressed at 0 tokens, under 1 millisecond |
+| **Blast radius classification** | Not present | HIGH / CRITICAL threshold blocks autonomous action on core devices |
+| **Structured audit trail** | Not published | Pydantic-validated JSON — Finite State Machine log, tool trace, confidence score |
+| **Protocol-layer coverage** | Border Gateway Protocol and interface errors not addressed | Border Gateway Protocol flap detection, cyclic redundancy check trending, VLAN isolation — shipped |
+
+Network operations is a distinct domain. A DevOps agent that surfaces application latency insights cannot classify a device by topology position or determine that a single source IP at 71% of egress is a security event rather than a load distribution issue.
 
 ---
 
@@ -379,6 +400,20 @@ cd ui && npm install && npm run dev
 | `OPENAI_API_KEY` | Embedding generation (seed only) | platform.openai.com |
 | `SPLUNK_MCP_URL` + `SPLUNK_TOKEN` | Live Splunk queries (optional — mocked by default) | Splunk Cloud → Settings → Tokens |
 | `CI_CATALYST_URL` + `CI_CATALYST_TOKEN` | Live Catalyst topology (optional — mocked by default) | Cisco DevNet / on-premises Catalyst |
+
+---
+
+## Splunk AI Governance Alignment
+
+Vigil implements all five of Splunk's published AI governance principles as core architecture — not as a compliance layer added after the fact.
+
+| Splunk Principle | Vigil |
+|---|---|
+| **Accountability** | Pydantic JSON report per investigation: Finite State Machine transition log, tool call trace, Retrieval-Augmented Generation retrieval log, confidence score |
+| **Transparency** | Threshold-based transitions, not black-box Large Language Model judgment — every SUPPRESSED / REMEDIATING / ESCALATING decision cites the rule that fired |
+| **Privacy** | Role-Based Access Control passthrough — Vigil inherits Splunk user permissions with no privilege escalation; no raw logs stored outside Pinecone |
+| **Fairness** | Rules-based pre-triage and configurable thresholds prevent model drift across incident types; all four reference types scored on the same rubric |
+| **Resilience** | Default-to-ESCALATING — ambiguous evidence, maximum tool calls, or novel scenario always routes to human; Pinecone outage falls back to non-Retrieval-Augmented Generation investigation |
 
 ---
 

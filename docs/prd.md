@@ -14,6 +14,22 @@ Cisco and Splunk have both shipped Model Context Protocol servers with network o
 
 ---
 
+## Why Now — Industry Validation from Splunk's Own Research
+
+Vigil's design choices are not ahead of the market — they are precisely aligned with what Splunk's own product leadership published as the direction for 2026.
+
+| Splunk Published Prediction | Source | Vigil |
+|---|---|---|
+| "Mean Time to Resolve is a dead metric for agentic operations. New KPIs: false positive reduction rate, autonomous triage precision, risk avoidance, prevented downtime." | Splunk Security Predictions 2026 | Phase 3 Evaluator ships all four of these KPIs as first-class outputs. Results table leads with suppression rate and precision, not speed. |
+| "High-performing Security Operations Centers will treat agents as core teammates — elevating human roles to oversight, policy-setting, and architecture." | Splunk Security Predictions 2026 | Vigil's graduated safety (SUPPRESSED / REMEDIATING / ESCALATING) is exactly this model: autonomous on routine, human-required on novel or high-risk. |
+| "Agentic audit trails become mandatory. Agents are digital identities requiring least-privilege access and explainable decision logs." | Splunk Security Predictions 2026 | Finite State Machine audit trail, Role-Based Access Control passthrough, and Pydantic-validated JSON report per investigation — shipped. |
+| "Model Context Protocol is the integration standard for coordinated multi-agent networks across enterprise tools." | Splunk Security Predictions 2026 | Vigil bridges two Model Context Protocol servers (Splunk + Cisco Catalyst) in a single investigation loop — the architecture MCP was designed to enable. |
+| "Domain-specific small language models will outperform general-purpose large language models for operational tasks — lower cost, fewer hallucinations, higher accuracy." | Splunk CTO Blog | Vigil's constrained mode demonstrates this today: same base model, schema enforcement, 0.91 precision at 57% lower token cost — domain specialization through constraint rather than a different model. |
+
+**The talent context behind all of this:** 86% of Chief Information Security Officers surveyed by Splunk believe generative AI directly addresses security talent shortages. Over 50% of security leaders report planning to leave their roles within 12 months. The staffing problem is not a gradual trend — it is an acute operational risk that agentic systems address structurally. Vigil gives every on-call engineer the consistent investigative methodology of a senior analyst, at machine scale, around the clock.
+
+---
+
 ## Results
 
 | Metric | Before Vigil | With Vigil | Change |
@@ -106,6 +122,25 @@ Jeetu Patel announced that Cisco is repositioning its entire AI product line aro
 | **Pre-triage noise suppression** | Not announced | Every alert hits the agent — no zero-token filtering layer | Rules-based classifier suppresses 35–40% of alerts at 0 tokens, under 1 millisecond, before any model call |
 | **Structured audit trail** | Not announced | No compliance artifact in any current Cisco demo | Pydantic-validated JSON report with Finite State Machine transition log, tool call trace, Retrieval-Augmented Generation retrieval log, confidence score, and evidence list. Sarbanes-Oxley and SOC 2 usable. |
 | **Outcome-based metrics (precision, suppression rate, cost per decision)** | Not announced | No per-investigation quality signal in any Cisco tooling — platform-level metrics only | Evaluator ships precision, recall, token cost, and composite score on every run. Suppression rate, cost per correct decision, and audit completeness are first-class outputs. |
+
+### AWS DevOps Agent + Splunk — The Closest Live Competitor
+
+In April 2025, Amazon Web Services launched the AWS DevOps Agent with native integration into Splunk Observability Cloud. It is the first shipped product applying autonomous incident investigation to Splunk telemetry. It matters because it proves the market is real — and because it is built for the wrong layer.
+
+| Capability | AWS DevOps Agent + Splunk | Vigil |
+|---|---|---|
+| **Incident scope** | Application and software stack incidents (deploy failures, service errors, latency regressions) | Network infrastructure incidents (packet loss, Border Gateway Protocol flaps, interface errors, topology-layer anomalies) |
+| **Topology awareness** | None — application service maps only | Full Cisco Catalyst physical topology: upstream device, VLAN, downstream count, blast radius classification |
+| **Multi-step state machine** | Single-turn investigation — returns hypothesis and suggestion | 7-state Finite State Machine with per-state tool allowlists, configurable escalation thresholds, and auditable transition log |
+| **Pre-triage suppression** | Every alert hits the agent | Rules engine suppresses 35–40% of alerts at 0 tokens, under 1 millisecond |
+| **Blast radius classification** | Not present | Configurable HIGH / CRITICAL threshold — blocks autonomous action on core devices |
+| **Cisco Catalyst integration** | None | Native — `get_network_topology` + `get_telemetry_metrics` bridged into the same investigation loop |
+| **Structured audit trail** | Not published | Pydantic-validated JSON report — Finite State Machine transition log, tool call trace, confidence score, and evidence list |
+| **Protocol-layer coverage** | Border Gateway Protocol and interface-level errors not addressed | Border Gateway Protocol flap detection, cyclic redundancy check error trending, VLAN isolation — shipped |
+
+The AWS DevOps Agent + Splunk proves that agentic incident investigation with Splunk integration is live, funded, and in production. Its gap is exactly where Vigil operates: network-layer specialization. A generic DevOps agent that surfaces application performance insights does not know how to read a Border Gateway Protocol state table, classify a device by its topology position, or determine that a single source IP representing 71% of egress traffic is a security signal rather than a traffic engineering problem. Network operations is a distinct domain — and it is the one Cisco is investing in directly.
+
+---
 
 ### The Competitive Position
 
@@ -222,6 +257,22 @@ Splunk's SAIA (`saia_*`) tools generate, explain, and optimize Splunk Processing
 | Escalate vs. remediate decision | ❌ Returns explanation — human decides | ✅ Configurable threshold rules route automatically |
 | Past incident retrieval | ❌ No memory | ✅ Pinecone retrieves top-3 similar resolved incidents |
 | Per-run cost and quality scoring | ❌ Organisation-level limit only | ✅ Precision, recall, token cost, and efficiency on every run |
+
+---
+
+## Splunk AI Governance Alignment
+
+Splunk's published AI governance framework defines five principles for responsible AI in enterprise operations. Vigil is designed against every one of them — not as a compliance afterthought, but as the core architecture.
+
+| Splunk AI Principle | What It Requires | How Vigil Implements It |
+|---|---|---|
+| **Accountability** | AI decisions must be auditable, attributable, and assigned to a responsible owner | Pydantic-validated JSON report on every investigation: Finite State Machine transition log, tool call trace, Retrieval-Augmented Generation retrieval log, confidence score, and evidence list. Every decision is fully inspectable — not summarised, not approximated. |
+| **Transparency** | AI reasoning must be explainable — not a black box | Finite State Machine transitions are threshold-based, not black-box Large Language Model judgment. SUPPRESSED / REMEDIATING / ESCALATING decisions cite the specific rule that fired (e.g. "single source IP > 60% egress → ESCALATING"). The reasoning is legible to any operator. |
+| **Privacy** | Data handling must respect access controls and minimise exposure | Role-Based Access Control passthrough — Vigil inherits the Splunk user's permissions with no privilege escalation. No raw telemetry is stored beyond Pinecone's vectorised summaries. Incident memory embeds resolved summaries only, not raw log data. |
+| **Fairness** | AI should not introduce systematic bias across incident types or user populations | Rules-based pre-triage and configurable thresholds prevent model drift from disproportionately suppressing or escalating any incident class. All four reference incident types are evaluated on the same scoring rubric. Threshold rules are auditable and adjustable — no opaque model behaviour in the decision path. |
+| **Resilience** | AI systems must fail safely, default to conservative behaviour, and degrade gracefully | Default-to-ESCALATING design: ambiguous evidence, maximum tool calls reached, or novel scenario — Vigil always routes to a human. The system never guesses on live infrastructure. A Pinecone outage falls back to non-Retrieval-Augmented Generation investigation; a model timeout escalates immediately. |
+
+Vigil's alignment with Splunk's own governance principles is not incidental — it is the architecture that makes an autonomous agent safe to deploy on live network infrastructure.
 
 ---
 
