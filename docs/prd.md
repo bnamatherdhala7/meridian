@@ -10,7 +10,7 @@
 
 ## The One-Line Story
 
-Cisco and Splunk have both shipped Model Context Protocol servers with network operations tools. Neither has shipped the reasoning layer that connects them, sequences the queries, and makes the escalate-or-fix decision at 2am. Vigil is that layer — built, running, and measured.
+Cisco and Splunk have both shipped Model Context Protocol servers with network operations tools. Neither has shipped the reasoning layer that connects them, sequences the queries, and makes the escalate-or-fix decision at 2am. Vigil is that layer — built, running, and measured. The question Vigil answers is not how fast the investigation runs — it is whether the investigation needed to happen at all.
 
 ---
 
@@ -18,24 +18,27 @@ Cisco and Splunk have both shipped Model Context Protocol servers with network o
 
 | Metric | Before Vigil | With Vigil | Change |
 |---|---|---|---|
-| Mean Time to Resolve (Priority 2) | 47 minutes | ~35 seconds | **98.8% faster** |
-| Mean Time to Detect (Priority 2) | 15 minutes | 8 seconds | **98.7% faster** |
 | False positive alerts suppressed | 0% | 35–40% | **0 tokens spent** |
 | Precision of investigation outcome | 0.55 (unconstrained) | **0.91** (schema-enforced) | +65% |
-| Token cost per investigation | ~$0.056 | ~$0.024 | **57% lower** |
 | Audit trail on decisions | None | 100% | Sarbanes-Oxley and SOC 2 usable |
+| Token cost per investigation | ~$0.056 | ~$0.024 | **57% lower** |
+| Mean Time to Resolve (Priority 2) ¹ | 47 minutes | ~35 seconds | **98.8% faster** |
+| Mean Time to Detect (Priority 2) ¹ | 15 minutes | 8 seconds | **98.7% faster** |
 
+*¹ Mean Time to Resolve and Mean Time to Detect apply only to incidents that reach investigation. 35–40% are suppressed before any model call — those incidents have an effective resolution time of under 1 millisecond.*  
 *Baselines: PagerDuty State of Digital Operations 2023 · IBM Cost of a Data Breach 2023*
 
 ---
 
 ## The Business Problem
 
-### 1 — Investigation Takes 47 Minutes. Only 20% of That Is the Actual Fix.
+### 1 — Decision Quality at 2am Is Inconsistent and Unmeasured
 
-When a network incident fires, an operator opens Splunk and starts querying manually. Getting from alert to root cause requires 5–10 Splunk Processing Language queries, cross-referencing topology data from a separate Cisco Catalyst Center tool, and a judgment call about whether to remediate or escalate — all under time pressure with Service Level Agreement penalties accumulating.
+When a network incident fires, the investigation outcome depends on who answers the page. A senior engineer who knows Splunk Processing Language well, checks egress traffic alongside error counters, and applies consistent escalation thresholds will reach the right conclusion. An engineer who is less experienced, more tired, or working from a different mental model may escalate when they should remediate, or remediate when they should escalate. There is no institutional memory to fall back on — every investigation starts cold, re-deriving conclusions that the team has reached before.
 
-**60% of Mean Time to Resolve is investigation and diagnosis, not remediation.** Vigil collapses that investigation phase to ~35 seconds for known incident patterns.
+The problem is not only speed. The problem is that decision quality is variable, invisible, and unmeasured. When an autonomous system takes over this work at machine scale, the variability does not disappear — it gets baked in, amplified across every alert, and left without an audit record.
+
+**Speed is a downstream consequence of upstream decision quality.** Getting from alert to root cause today requires 5–10 Splunk Processing Language queries, cross-referencing a separate Cisco Catalyst topology tool, and a judgment call under pressure — a process that takes 47 minutes on average and produces inconsistent outcomes. Vigil collapses that investigation phase to ~35 seconds by enforcing the same decision methodology every time, grounded in vetted query patterns and past incident resolutions.
 
 ### 2 — Splunk and Cisco Catalyst Are Never Queried Together
 
@@ -49,11 +52,13 @@ A Priority 2 at 2am gets a different investigation depending on how well the on-
 
 **No institutional memory means the team re-derives the same conclusions for recurring incident patterns.** Vigil's Finite State Machine enforces the same methodology every time, and Pinecone Retrieval-Augmented Generation surfaces relevant past resolutions automatically.
 
-### 4 — AI-Assisted Investigation Leaves No Audit Trail
+### 4 — Autonomous Systems Making Decisions at Machine Scale With No Reasoning Record Is an Organizational Risk
 
-As teams adopt AI for network operations, a compliance gap emerges: the AI's reasoning is invisible. An operator accepts a recommendation and closes a ticket. There is no record of which tools were called, what evidence was gathered, why the agent chose to escalate versus remediate, or how confident it was.
+When an AI agent investigates thousands of incidents per day, suppresses alerts, routes escalations, and proposes remediations — and none of that reasoning is recorded — the organization has created a new class of risk. It is not primarily a compliance risk. It is an operational risk: when something goes wrong at scale, there is no way to understand why the system behaved as it did, which decisions were correct, which were not, or how to improve it.
 
-**This is a live issue for Sarbanes-Oxley and SOC 2-compliant environments.** Vigil's JSON report — with Finite State Machine transition log, tool call trace, Retrieval-Augmented Generation retrieval log, confidence score, and evidence list — is directly usable as a compliance artifact.
+Compliance requirements — Sarbanes-Oxley, SOC 2, internal audit requirements — are examples of the formal pressure this creates, not the full scope of the problem. The deeper issue is that a system making consequential decisions on live infrastructure, with no decision record, cannot be trusted, audited, improved, or held accountable. That is true whether or not a regulator asks for the log.
+
+**Vigil's JSON report** — with Finite State Machine transition log, tool call trace, Retrieval-Augmented Generation retrieval log, confidence score, and evidence list — makes every decision fully inspectable. Sarbanes-Oxley and SOC 2 compliance is a direct benefit. The primary benefit is that the system can be understood, measured, and improved over time.
 
 ### 5 — Token Cost at Scale Is Unmeasured and Growing
 
@@ -100,6 +105,7 @@ Jeetu Patel announced that Cisco is repositioning its entire AI product line aro
 | **Institutional memory** | Not announced | Every investigation starts cold — no retrieval of what resolved similar incidents | Two Pinecone vector stores shipped: 20 vetted Splunk Processing Language patterns (retrieved at TRIAGE) and 30 past incident summaries (retrieved at INVESTIGATING) |
 | **Pre-triage noise suppression** | Not announced | Every alert hits the agent — no zero-token filtering layer | Rules-based classifier suppresses 35–40% of alerts at 0 tokens, under 1 millisecond, before any model call |
 | **Structured audit trail** | Not announced | No compliance artifact in any current Cisco demo | Pydantic-validated JSON report with Finite State Machine transition log, tool call trace, Retrieval-Augmented Generation retrieval log, confidence score, and evidence list. Sarbanes-Oxley and SOC 2 usable. |
+| **Outcome-based metrics (precision, suppression rate, cost per decision)** | Not announced | No per-investigation quality signal in any Cisco tooling — platform-level metrics only | Evaluator ships precision, recall, token cost, and composite score on every run. Suppression rate, cost per correct decision, and audit completeness are first-class outputs. |
 
 ### The Competitive Position
 
@@ -244,6 +250,8 @@ Splunk's SAIA (`saia_*`) tools generate, explain, and optimize Splunk Processing
 | **Continuous Incident Memory** | Webhook from ServiceNow or Jira auto-embeds every closed incident into Pinecone. Over 6 months the incident memory becomes a proprietary operational knowledge base specific to each customer's environment. |
 | **Splunk Processing Language Cache** | Time-to-live-based cache for known-pattern queries; reduces SAIA prompt consumption 40–60% against Splunk's 3,000 prompt/month organisation limit. |
 | **AI Canvas Integration** | When Cisco AI Canvas ships, Vigil's Finite State Machine transitions map directly to Canvas workflows. The bridge layer, Retrieval-Augmented Generation retrieval, and evaluator remain unchanged. |
+| **Outcome KPI Dashboard** | Business-leader reporting on risk avoided (suppressed alerts × estimated business impact per incident), cost per correct decision, and analyst effectiveness rate (percentage of escalations that required genuine human judgment vs. noise passed through). Maps AI investment to security ROI in terms that a VP or CFO can act on — not latency charts. |
+| **Prevention Rate Tracking** | Track the ratio of incidents suppressed vs. investigated vs. escalated over time, surfacing the trend as the system learns from new incident memory. As the Pinecone corpus grows, suppression rate should rise and escalation rate should fall for recurring incident types. This trend replaces Mean Time to Resolve trend charts as the primary operational health signal — measuring whether the system is getting better at preventing unnecessary investigations, not just how fast it runs them. |
 
 ---
 
@@ -287,6 +295,7 @@ Vigil demonstrates that every meaningful capability in that vision is buildable 
 | 35–40% of alerts suppressed before any model call | ✅ Shipped |
 | Full audit trail on every investigation — Sarbanes-Oxley and SOC 2 usable | ✅ Shipped |
 | Pinecone Retrieval-Augmented Generation grounding every investigation step | ✅ Shipped |
+| Outcome-based metrics replacing Mean Time to Resolve as primary KPI — precision, suppression rate, cost per correct decision | ✅ Shipped |
 
 Cisco is building the horizontal platform. Vigil is the vertical application — the incident commander that takes Cisco's platform hooks and runs a high-precision, cost-optimized, and auditable investigation end-to-end.
 
