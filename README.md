@@ -217,26 +217,33 @@ Two vector stores make every investigation step evidence-grounded rather than La
 
 ---
 
-## AI · ML · 1P · 3P — What's Doing the Work
+## What's Doing the Work — Production Architecture
 
-Vigil is a deliberate hybrid: **generative AI** for reasoning, **ML foundation models** for forecasting and embedding, **deterministic rules** for everything safety-critical.
+**The principle:** Vigil **buys foundation models (3p)** and **builds network-domain logic (1p)**. No classical machine learning anywhere — every "smart" component is a transformer-based foundation model. Everything safety-critical is deterministic rules.
 
-| Layer | What Does the Work | 1p (Built) / 3p (Bought) |
+> Cisco Time Series Model and Chronos are **time-series language models** — same transformer architecture as LLMs, just trained on time-series tokens. The boundary between "LLM" and "time-series foundation model" is training data, not architecture. *([Chronos paper](https://arxiv.org/abs/2403.07815) · [TimesFM blog](https://research.google/blog/a-decoder-only-foundation-model-for-time-series-forecasting/))*
+
+| Layer | Production Component | 1p / 3p |
 |---|---|---|
-| Phase 1 — MCP bridge | Tool wrappers | **1p** wrappers · **3p** Splunk + Cisco Catalyst MCP servers |
-| **Phase 2.5 — Pre-Triage** | **Rules — not AI, not ML** | **1p** |
-| Phase 2 — FSM transitions | Deterministic state machine + threshold rules | **1p** |
-| Phase 2 — Reasoning inside states | Generative AI (LLM) | **3p** — Anthropic Claude |
-| Phase 2 — RAG embeddings | ML model | **3p** — OpenAI `text-embedding-3-small` |
-| Phase 2 — Vector database | Managed infrastructure | **3p** — Pinecone |
-| Phase 2 — Curated corpora | Vetted network-domain knowledge | **1p** |
-| Phase 3 — Evaluator | Deterministic scoring | **1p** |
-| Phase 4 — Time-series forecasting | ML foundation models | **3p** — Cisco Time Series Model + Chronos |
-| Phase 4 — Trigger evaluation | Deterministic rules over forecast | **1p** |
+| Reasoning inside FSM states | Anthropic Claude + schema-enforced JSON | **3p** model · **1p** schema (the 0.91 precision lever) |
+| Time-series forecasting | **Cisco Time Series Model** (500M, decoder-only transformer, open-weights, self-hosted) + **Chronos-T5-Small** (46M, open-weights) | **3p** |
+| Retrieval embeddings | OpenAI `text-embedding-3-small` *(or BGE-M3 self-hosted)* | **3p** |
+| Vector database | Pinecone *(or Qdrant self-hosted)* | **3p** |
+| MCP servers + 2 new Catalyst tools | Splunk MCP + Cisco Catalyst MCP + Vigil's `get_network_topology` / `get_telemetry_metrics` | **3p servers + 1p tools** |
+| Buffer storage (forecast layer) | Redis + TimescaleDB / InfluxDB | **3p** |
+| **Pre-triage classifier** | **Rules** — explicit if-then logic | **1p** |
+| Finite State Machine + transitions | Deterministic state machine | **1p** |
+| Trigger evaluation (threshold / trajectory / uncertainty) | Deterministic rules over forecast output | **1p** |
+| Curated corpora (SPL patterns + incident memories) | Vetted network-domain knowledge | **1p** |
+| Evaluator (precision, recall, token cost) | Deterministic scoring | **1p** |
 
-**Why pre-triage is rules-based, not ML or AI:** 35–40% of alerts hit this layer at zero tokens and under one millisecond. Every suppression decision must cite the exact rule that fired (Splunk's Accountability + Transparency governance principles). ML would add cost, latency, and reduce explainability without precision gain on binary noise filtering. **Rules are the right tool here — deliberately chosen.**
+**Buy (3p):** Foundation models for pattern recognition — Claude (text), CTSM + Chronos (time-series), embeddings. Anthropic, OpenAI, and Cisco's foundation-model team ship frontier capability faster than any in-house effort could match. **Every model release improves Vigil for free.**
 
-**Why the hybrid:** A model alone is a chatbot. Rules alone are a runbook. **1p** encodes the network-domain reasoning that is the moat (FSM, threshold rules, corpora, evaluator, trigger logic). **3p** delivers frontier foundation models (LLM, time-series, embeddings) at marginal cost — and improves Vigil for free with every model release.
+**Build (1p):** Network-domain logic — FSM, threshold rules, pre-triage, curated corpora, evaluator, schema enforcement, the two new Catalyst tools. This is what makes Vigil's investigation different from a generic LLM with tools.
+
+**The proprietary asset over time:** The Phase 4 feedback loop converts every investigation into a labeled forecast-vs-outcome record. That corpus feeds customer-specific fine-tuning of CTSM (Priority 3 in [`docs/model-evaluation.md`](./docs/model-evaluation.md)). Base models stay 3p; the fine-tuning corpus is 1p — **over time, that corpus is the moat.**
+
+**Why pre-triage is rules, not a model:** Pre-triage is *logical filtering*, not *pattern recognition*. The decision (*"did three corroborating signals fire, or just one repeating one?"*) is explicit if-then logic. A foundation model's edge is finding patterns humans cannot articulate; here the patterns are already articulated. A model would be the wrong tool. Auditability and <1ms latency are supporting reasons. **Deliberately chosen.**
 
 ---
 
