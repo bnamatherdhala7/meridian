@@ -74,6 +74,7 @@ Splunk's own 2026 leadership posts make the case for Vigil's architecture explic
 | *"Agentic AI enables organizations to get ahead of incidents, contain issues before they spread."* | [Kamal Hathi, Splunk](https://www.splunk.com/en_us/blog/leadership/machinegpt-agentic-ai-and-the-new-foundation-for-digital-resilience.html) | Phase 4 forecasting layer fires triggers before incidents fully develop |
 | *"Most organizations are drowning in data, yet they are starved for insight."* | [Kamal Hathi, .conf25](https://www.splunk.com/en_us/blog/leadership/conf25-reinventing-digital-resilience-for-the-agentic-era.html) | Two Pinecone vector stores ground every investigation step in vetted patterns and resolved incidents |
 | *"Domain-specific small language models will outperform general-purpose large language models for operational tasks."* | Splunk CTO Blog (Hao Yang) | Vigil's constrained mode demonstrates this today: same base model, schema enforcement, 0.91 precision at 57% lower token cost |
+| *Cisco Time Series Model launched 24 November 2025 — open-weights, 300B+ datapoints, designed for "reliable forecasting across observability and security operations, automations, and agentic workflows."* | [Splunk announcement, Liang Gou + Sonal Pardeshi](https://www.splunk.com/en_us/blog/artificial-intelligence/introducing-the-cisco-time-series-model.html) | Vigil benchmarked CTSM against Chronos and TimesFM the week the model dropped (see [`splunk_evals.ipynb`](../splunk_evals.ipynb)) — and is the first published application of it for agentic incident commander. v1.0 due early 2026 — the partnership window is open now. |
 
 ---
 
@@ -177,10 +178,12 @@ Same base model, two prompting strategies. Schema enforcement quantified.
 Every competing product is reactive — alert arrives, agent investigates. Vigil's forecasting layer fires triggers **before** the alerting system would have.
 
 ```
-Splunk MCP poll → 512-step rolling buffer per device × metric
+Splunk MCP poll → 1024-point context per device × metric
+                  (512 recent fine + 512 historical coarse — multiresolution)
         │
         ▼
-CTSM (point forecast) + Chronos (P10/P50/P90)   ·   24 steps · ~2h ahead
+CTSM (point forecast) + Chronos (P10/P50/P90)
+        Forecast horizon: 2–10 hours (configurable per resolution)
         │
         ▼
 3 trigger types — THRESHOLD · TRAJECTORY · UNCERTAINTY
@@ -191,6 +194,12 @@ Finite State Machine investigation (forecast snapshot attached to audit trail)
         ▼
 Feedback loop — labeled fine-tuning corpus for supervised CTSM fine-tuning
 ```
+
+**CTSM status — per [Cisco and Splunk's joint announcement, 24 November 2025](https://www.splunk.com/en_us/blog/artificial-intelligence/introducing-the-cisco-time-series-model.html)** (Liang Gou and Sonal Pardeshi):
+- 1.0-preview shipped, **v1.0 due early 2026** — open-weights on Hugging Face (`cisco-ai/cisco-time-series-model-1.0-preview`) and GitHub (`splunk/cisco-time-series-model`)
+- Trained on **300B+ datapoints across ~400M time series**, six months of machine data, plus the GiftEval and Chronos open datasets
+- **Designed for the same three personas Vigil targets**: SREs (capacity automation), DevOps (predictive alerts), Admins / Analysts (dashboards for resource exhaustion and SLO violations) — Vigil's incident commander is the first application that uses one model to serve all three
+- **Architecturally produces both quantile and point predictions** — the quantile output is in the model; only the Hugging Face Spaces API surfacing is missing. This is why Priority 0 in [`splunk_evals.ipynb`](../splunk_evals.ipynb) ("ask Cisco to expose quantile outputs") is one hour of work, not a model change.
 
 **Three knowledge sources, three time orientations — no competitor has all three:**
 
