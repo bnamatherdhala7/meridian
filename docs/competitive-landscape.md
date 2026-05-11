@@ -129,16 +129,7 @@ These are products targeting the same buyer (network operations) with an AI/auto
 
 These products target a broader buyer (observability / Site Reliability Engineering) and are adding agentic capabilities. They overlap with Vigil through Splunk integration or through the autonomous investigation pattern.
 
-### AWS DevOps Agent + Splunk
 
-| Field | Status |
-|---|---|
-| **What they ship today** | Autonomous AI agent integrated with Splunk Observability Cloud (April 2025). Investigates software / application incidents, surfaces root cause hypotheses, suggests remediation. |
-| **Shipping timeline** | Generally available |
-| **AI/agentic approach** | Single-turn investigation per alert, returns hypothesis and suggested action. The closest live product to Vigil's pattern. |
-| **Strengths** | Live, shipping, Amazon Web Services-backed, integrated with Splunk |
-| **Gaps relative to Vigil** | (1) Application / software stack focus — not network infrastructure. (2) No Cisco Catalyst topology awareness. (3) Single-turn, not multi-state Finite State Machine. (4) No pre-triage suppression. (5) No Border Gateway Protocol / interface-layer coverage. (6) No blast radius classification. |
-| **Vigil's posture** | Different incident scope. AWS DevOps Agent proves the agentic-Splunk-investigation market exists; Vigil owns the network-specialist sub-segment that AWS is not addressing. |
 
 ### Datadog — Bits AI + Watchdog
 
