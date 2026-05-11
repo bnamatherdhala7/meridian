@@ -217,6 +217,29 @@ Two vector stores make every investigation step evidence-grounded rather than La
 
 ---
 
+## AI · ML · 1P · 3P — What's Doing the Work
+
+Vigil is a deliberate hybrid: **generative AI** for reasoning, **ML foundation models** for forecasting and embedding, **deterministic rules** for everything safety-critical.
+
+| Layer | What Does the Work | 1p (Built) / 3p (Bought) |
+|---|---|---|
+| Phase 1 — MCP bridge | Tool wrappers | **1p** wrappers · **3p** Splunk + Cisco Catalyst MCP servers |
+| **Phase 2.5 — Pre-Triage** | **Rules — not AI, not ML** | **1p** |
+| Phase 2 — FSM transitions | Deterministic state machine + threshold rules | **1p** |
+| Phase 2 — Reasoning inside states | Generative AI (LLM) | **3p** — Anthropic Claude |
+| Phase 2 — RAG embeddings | ML model | **3p** — OpenAI `text-embedding-3-small` |
+| Phase 2 — Vector database | Managed infrastructure | **3p** — Pinecone |
+| Phase 2 — Curated corpora | Vetted network-domain knowledge | **1p** |
+| Phase 3 — Evaluator | Deterministic scoring | **1p** |
+| Phase 4 — Time-series forecasting | ML foundation models | **3p** — Cisco Time Series Model + Chronos |
+| Phase 4 — Trigger evaluation | Deterministic rules over forecast | **1p** |
+
+**Why pre-triage is rules-based, not ML or AI:** 35–40% of alerts hit this layer at zero tokens and under one millisecond. Every suppression decision must cite the exact rule that fired (Splunk's Accountability + Transparency governance principles). ML would add cost, latency, and reduce explainability without precision gain on binary noise filtering. **Rules are the right tool here — deliberately chosen.**
+
+**Why the hybrid:** A model alone is a chatbot. Rules alone are a runbook. **1p** encodes the network-domain reasoning that is the moat (FSM, threshold rules, corpora, evaluator, trigger logic). **3p** delivers frontier foundation models (LLM, time-series, embeddings) at marginal cost — and improves Vigil for free with every model release.
+
+---
+
 ## Reference Incident
 
 > **INC-20240214-001 · Priority 2 · San Jose**

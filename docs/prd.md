@@ -211,6 +211,35 @@ The war-room user interface ships a Forecast Strip rendering all three signals (
 
 ---
 
+## AI · Machine Learning · First-Party · Third-Party — What Is Doing the Work
+
+Vigil is deliberately a hybrid. Generative artificial intelligence for reasoning about evidence; machine-learning foundation models for forecasting and embedding; **deterministic rules for everything safety-critical**. The split between first-party (1p — Vigil's own code) and third-party (3p — vendor models, application programming interfaces, infrastructure) is equally deliberate: foundation models are bought, network-domain decision logic is built.
+
+| Layer | What Does the Work | 1p / 3p | Why |
+|---|---|---|---|
+| **Phase 1** — Model Context Protocol bridge | Deterministic tool wrappers | **1p** wrappers · **3p** Splunk MCP + Cisco Catalyst MCP servers | Vendor-owned tool servers by design — Vigil consumes, does not duplicate |
+| **Phase 2.5** — Pre-Triage classifier | **Rules** — not artificial intelligence, not machine learning | **1p** | 35–40% of alerts hit this layer. Zero tokens. Sub-millisecond. Every suppression decision must cite the exact rule that fired (Accountability + Transparency governance principles). Machine learning would add cost, latency, and reduce explainability without precision gain on binary noise filtering. |
+| **Phase 2** — Finite State Machine transitions | Deterministic state machine + configurable threshold rules | **1p** | The network-domain reasoning methodology is the moat. State transitions must be auditable — never black-box Large Language Model judgment. |
+| **Phase 2** — Reasoning inside each state | **Generative artificial intelligence (Large Language Model)** | **3p** — Anthropic Claude | Frontier Large Language Model training costs $10M–$1B+. Buying gives state-of-the-art reasoning at marginal cost; capability improves with every Claude release. |
+| **Phase 2** — Retrieval-Augmented Generation embeddings | **Machine learning model** | **3p** — OpenAI `text-embedding-3-small` | Best-in-class embeddings at near-zero marginal cost. No reason to rebuild. |
+| **Phase 2** — Vector database | Managed infrastructure | **3p** — Pinecone serverless | Commoditised infrastructure — not a differentiator |
+| **Phase 2** — Curated corpora (20 Splunk Processing Language patterns + 30 incident memories) | Vetted domain knowledge | **1p** | The proprietary network-domain knowledge — the corpus is the moat. Grows customer-specifically over time. |
+| **Phase 3** — Evaluator | Deterministic scoring | **1p** | The quality rubric (precision, recall, composite, suppression rate, token cost) is a product opinion — not a generic machine learning metric |
+| **Phase 4** — Time-series forecasting | **Machine learning foundation models** | **3p** — Cisco Time Series Model + Chronos-T5-Small | Two foundation models in parallel. Frontier time-series machine learning is 2024–2026 territory — outsourced for the same reasons as the Large Language Model. |
+| **Phase 4** — Trigger evaluation (threshold / trajectory / uncertainty) | Deterministic rules over forecast output | **1p** | What "threshold breach," "trajectory drift," and "P90 uncertainty" mean in network operations is network-domain expertise — encoded as rules, not as a model |
+
+### Why the Hybrid
+
+> **A model alone is a chatbot. Rules alone are a runbook.**
+
+**1p (built — the moat):** Network-domain reasoning — Finite State Machine, threshold rules, pre-triage logic, curated corpora, evaluator rubric, trigger evaluation, Cisco Catalyst bridge tools. This is what makes Vigil's investigation different from a generic Large Language Model with tools. It encodes a senior network engineer's investigation methodology, made auditable and reproducible.
+
+**3p (bought — the leverage):** Foundation models — Claude (Large Language Model), Cisco Time Series Model and Chronos (time-series), OpenAI embeddings, Pinecone vector database, Splunk and Cisco Catalyst MCP servers. These commoditise faster than we could build them; renting gives us frontier capabilities at marginal cost. Every improvement to Claude, Cisco Time Series Model, or `text-embedding-3-small` improves Vigil for free.
+
+**Why pre-triage specifically is rules-based, not artificial intelligence or machine learning:** This is the single most-asked question about Vigil's architecture. The answer is operational, not philosophical. Three constraints rule out machine learning at this layer: (1) 35–40% of alerts hit pre-triage — processing cost matters; (2) the latency budget is under one millisecond; (3) every decision must cite the exact rule that fired, per Splunk's Accountability and Transparency governance principles. A small classifier would add cost and latency without measurable precision gain on binary noise filtering — and classifier weights are not auditable in the way explicit rules are. **Rules are the right tool for this layer, deliberately chosen.**
+
+---
+
 ## Competitive Position
 
 Full breakdown across 25+ vendors in [`docs/competitive-landscape.md`](./competitive-landscape.md). The market map:
