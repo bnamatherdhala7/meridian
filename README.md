@@ -23,13 +23,19 @@ Vigil is a Finite State Machine agent that sits on top of Splunk's Model Context
 
 ---
 
-## The Problem
+## The Five Problems Splunk Customers Face — In Splunk's Own Words
 
-When a network incident fires at 2am, an operator opens Splunk and stares at a search bar.
+| # | Problem | Splunk-Published Evidence | Vigil's Answer |
+|---|---|---|---|
+| **1** | **False positive alert fatigue** | 55% of orgs have too many false positives · 32% of analyst day spent on false alarms · 94% of CISOs cite false alerts as top burnout driver *(State of Security 2025, Splunk CISO Report)* | Phase 2.5 pre-triage suppresses 35–40% of alerts at zero tokens, <1ms |
+| **2** | **Manual, fragmented investigation** | 81% of SOC pros name manual investigations across disconnected tools as #1 contributor to slow detection · ~$58K · 50–150 hours per incident *(Dimitri McKay, Splunk)* | Splunk + Cisco Catalyst in one investigation loop — 47 min → 35s |
+| **3** | **Tool sprawl is the dominant inefficiency** | 78% of orgs say tools are disconnected · 59% cite tool maintenance as #1 SOC inefficiency · 46% spend more time configuring than defending *(State of Security 2025, Kirsty Paine)* | Reasoning layer, not another platform — consumes existing MCP tools, same RBAC, same data |
+| **4** | **Reactive operations are no longer enough** | *"Traditional, reactive operations are no longer enough"* (Craig Robin, 2026) · *"Agentic AI enables organizations to get ahead of incidents"* (Kamal Hathi, SVP & GM Splunk) | Phase 4 forecasting layer fires triggers up to 18 min before alerts — only product combining foundation-model forecasting with agentic investigation |
+| **5** | **Machine-scale decisions without audit trail** | 73% of observability teams report outages caused by ignored alerts · 65% of CISOs sense employee burnout · *"Agentic audit trails are mandatory"* (Splunk Security Predictions 2026) | Pydantic JSON report per investigation — FSM transitions, tool calls, RAG hits, forecast snapshot, confidence, evidence. SOX + SOC 2 usable. |
 
-Getting from alert to root cause requires 5–10 manual Splunk Processing Language queries, cross-referencing topology data from a separate Cisco Catalyst Center tool, and a judgment call about whether to remediate or escalate — all under time pressure with Service Level Agreement penalties accumulating. **60% of Mean Time to Resolve is investigation and diagnosis, not the actual fix.**
+**Per Splunk's 2026 Predictions:** *"MTTR becomes less a measure of performance and more a snapshot of how late we were in the process. SOC directors will look toward outcome-based measures — reduction in false positives, precision of autonomous triage, risk avoided rather than risk responded to."* Vigil's results table leads with those four metrics.
 
-The tools exist. Splunk's Model Context Protocol server exposes 14 query tools. Cisco Catalyst ships a separate topology server. Neither has shipped the reasoning layer that connects them, sequences the queries, and makes the escalate-or-fix decision.
+Tools exist on both sides. **What nobody has shipped is the reasoning layer that connects Splunk and Cisco Catalyst, sequences the queries, and makes the escalate-or-fix decision at 2am.**
 
 ---
 
