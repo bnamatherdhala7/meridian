@@ -70,16 +70,7 @@ The competitive space organizes along two axes: **scope** (network-specialist vs
 
 These are products targeting the same buyer (network operations) with an AI/autonomy story. Vigil's positioning is sharpest against this tier.
 
-### Cisco AgenticOps / AI Canvas / Deep Network Model
 
-| Field | Status |
-|---|---|
-| **What they ship today** | Cisco Live 2025 announcement: AI Canvas (drag-and-drop agentic workflow builder), Skills Registry (Model Context Protocol skill catalog), Deep Network Model (network-specific foundation model, target 2026) |
-| **Shipping timeline** | Preview, 2025–26. None of the three components fully generally available. |
-| **AI/agentic approach** | Horizontal platform — customers build vertical applications on top |
-| **Strengths** | Native Cisco integration, owns the network telemetry source, owns Splunk after acquisition |
-| **Gaps relative to Vigil** | Cisco builds the platform; Vigil is the application that runs on it. Reasoning logic, decision rules, audit trail, and integration with Splunk Processing Language patterns are not in any Cisco roadmap component. |
-| **Vigil's posture** | Complementary — when AI Canvas ships, Vigil's Finite State Machine maps to a Canvas workflow. When the Deep Network Model ships, the Large Language Model call swaps out. Architecture is built to absorb Cisco's roadmap, not race it. |
 
 ### Juniper Networks — Marvis (Mist AI)
 
