@@ -390,18 +390,13 @@ export default function App() {
         <div className="header-right">
           {ragCount > 0 && (
             <span className="header-rag-badge" title="Pinecone RAG retrievals">
-              ◈ {ragCount} RAG
-            </span>
-          )}
-          {totalTokens > 0 && (
-            <span className="header-tokens">
-              <span>{totalTokens.toLocaleString()}</span> tokens
+              ◈ {ragCount}
             </span>
           )}
           {mttdData && (
-            <span className="header-mttd" title={mttdData.headline}>
+            <span className="header-mttd" title={`${mttdData.headline} · ${totalTokens.toLocaleString()} tokens`}>
               <span className="header-mttd-value">{mttdData.mttr_speedup_pct.toFixed(0)}%</span>
-              {' '}faster · {Math.round(mttdData.mttr_vigil_s)}s vs {Math.round(mttdData.mttr_baseline_s / 60)}min
+              {' '}faster
             </span>
           )}
           <span className={`status-pill ${status}`}>{STATUS_LABEL[status]}</span>
