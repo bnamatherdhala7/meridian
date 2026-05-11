@@ -24,7 +24,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from fastapi import Body
-from phase2_agent.commander import IncidentCommander
+from phase2_agent.commander import IncidentCommander, compute_run_cost_usd
 from phase2_5_classifier import AlertClassifier
 from phase2_5_classifier.models import Alert
 from phase3_evaluator import evaluator
@@ -290,6 +290,15 @@ async def run_investigation(scenario: str = Query(default="packet_loss")) -> Str
 
         try:
             report = commander.run(selected, callback=on_event)
+            # Compute true cost using per-model tiering + cache pricing (Levers 1 & 2)
+            cost_breakdown = compute_run_cost_usd(
+                haiku_input_tokens=report.haiku_input_tokens,
+                haiku_output_tokens=report.haiku_output_tokens,
+                sonnet_input_tokens=report.sonnet_input_tokens,
+                sonnet_output_tokens=report.sonnet_output_tokens,
+                cache_creation_input_tokens=report.cache_creation_input_tokens,
+                cache_read_input_tokens=report.cache_read_input_tokens,
+            )
             q.put({
                 "type": "report",
                 "data": {
@@ -304,6 +313,15 @@ async def run_investigation(scenario: str = Query(default="packet_loss")) -> Str
                     "input_tokens": report.input_tokens,
                     "output_tokens": report.output_tokens,
                     "duration_secs": report.duration_secs,
+                    # New cost-reduction fields
+                    "cache_creation_input_tokens": report.cache_creation_input_tokens,
+                    "cache_read_input_tokens":     report.cache_read_input_tokens,
+                    "haiku_input_tokens":   report.haiku_input_tokens,
+                    "haiku_output_tokens":  report.haiku_output_tokens,
+                    "sonnet_input_tokens":  report.sonnet_input_tokens,
+                    "sonnet_output_tokens": report.sonnet_output_tokens,
+                    "cost_usd":             cost_breakdown["total_usd"],
+                    "cost_breakdown":       cost_breakdown,
                 },
             })
 

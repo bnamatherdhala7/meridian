@@ -149,6 +149,97 @@ _STATE_MAX_TOKENS: dict[str, int] = {
     "ESCALATING":    512,
 }
 
+# Per-state model tiering (Lever 2). Haiku 4.5 handles tool orchestration in
+# TRIAGE/INVESTIGATING at ~3x lower input cost and ~3x lower output cost than
+# Sonnet 4.6. HYPOTHESIZING — where the actual root-cause decision and FSM
+# transition rationale are produced — stays on Sonnet for quality. Terminal
+# states do not call the LLM (the loop exits) so their model is moot.
+_DEFAULT_REASONING_MODEL = "claude-sonnet-4-6"
+_DEFAULT_ROUTING_MODEL   = "claude-haiku-4-5-20251001"
+
+_STATE_MODEL: dict[str, str] = {
+    "TRIAGE":        _DEFAULT_ROUTING_MODEL,
+    "INVESTIGATING": _DEFAULT_ROUTING_MODEL,
+    "HYPOTHESIZING": _DEFAULT_REASONING_MODEL,
+    "REMEDIATING":   _DEFAULT_ROUTING_MODEL,
+    "ESCALATING":    _DEFAULT_ROUTING_MODEL,
+}
+
+# USD per million tokens — Anthropic public pricing.
+# Cache write costs 1.25x normal input; cache read costs 0.1x normal input.
+_PRICING: dict[str, dict[str, float]] = {
+    "sonnet": {"input": 3.00, "output": 15.00},
+    "haiku":  {"input": 1.00, "output":  5.00},
+}
+
+
+def compute_run_cost_usd(
+    *,
+    haiku_input_tokens: int,
+    haiku_output_tokens: int,
+    sonnet_input_tokens: int,
+    sonnet_output_tokens: int,
+    cache_creation_input_tokens: int = 0,
+    cache_read_input_tokens: int = 0,
+) -> dict[str, float]:
+    """Compute true API cost for a Vigil run accounting for model tiering and cache.
+
+    Returns breakdown so the evaluator can show where the cost lands.
+    """
+    # Per-model input prices assume cache breakpoints stay within the same model
+    # (true for Vigil — caching is on system+tools within one state, one model).
+    # Subtract cache tokens from the per-model input bucket before pricing, then
+    # reprice them at the discounted/premium cache rate.
+
+    def _price(model: str, input_tokens: int, output_tokens: int) -> dict[str, float]:
+        p = _PRICING[model]
+        return {
+            "input_usd":  input_tokens  * p["input"]  / 1_000_000,
+            "output_usd": output_tokens * p["output"] / 1_000_000,
+        }
+
+    # Distribute cache tokens proportionally between models for cost modeling.
+    # In practice for Vigil HYPOTHESIZING is Sonnet, others Haiku — the cache
+    # tokens land on whichever model owned the state at write/read time.
+    # We approximate by ratio of input tokens.
+    total_input = haiku_input_tokens + sonnet_input_tokens or 1
+    haiku_share  = haiku_input_tokens  / total_input
+    sonnet_share = sonnet_input_tokens / total_input
+
+    # Treat cached tokens as already included in haiku/sonnet input counts (we
+    # bucketed them into the per-model input total at call time). Subtract them
+    # back out, then reprice at cache rates.
+    haiku_normal_in  = max(0, haiku_input_tokens  - int(haiku_share  * (cache_creation_input_tokens + cache_read_input_tokens)))
+    sonnet_normal_in = max(0, sonnet_input_tokens - int(sonnet_share * (cache_creation_input_tokens + cache_read_input_tokens)))
+
+    haiku_cost  = _price("haiku",  haiku_normal_in,  haiku_output_tokens)
+    sonnet_cost = _price("sonnet", sonnet_normal_in, sonnet_output_tokens)
+
+    # Cache pricing — same input price as the model that wrote/read it, scaled
+    # by 1.25 (write) and 0.1 (read). Use a blended rate weighted by per-model share.
+    blended_input_rate = (
+        haiku_share  * _PRICING["haiku"]["input"]
+        + sonnet_share * _PRICING["sonnet"]["input"]
+    )
+    cache_write_usd = cache_creation_input_tokens * blended_input_rate * 1.25 / 1_000_000
+    cache_read_usd  = cache_read_input_tokens     * blended_input_rate * 0.10 / 1_000_000
+
+    total_usd = (
+        haiku_cost["input_usd"]  + haiku_cost["output_usd"]
+        + sonnet_cost["input_usd"] + sonnet_cost["output_usd"]
+        + cache_write_usd + cache_read_usd
+    )
+
+    return {
+        "haiku_input_usd":   haiku_cost["input_usd"],
+        "haiku_output_usd":  haiku_cost["output_usd"],
+        "sonnet_input_usd":  sonnet_cost["input_usd"],
+        "sonnet_output_usd": sonnet_cost["output_usd"],
+        "cache_write_usd":   cache_write_usd,
+        "cache_read_usd":    cache_read_usd,
+        "total_usd":         total_usd,
+    }
+
 
 def _compress_tool_result(tool_name: str, result: dict) -> str:
     """Compact one-liner for a tool result — stored in message history after the first use.
@@ -248,6 +339,17 @@ class IncidentReport:
     output_tokens: int
     duration_secs: float
     incident_description: str = ""
+    # Lever 1: prompt caching — cache_creation costs 1.25x normal input price,
+    # cache_read costs 0.1x normal (90% discount). Tracked separately so the
+    # evaluator can compute true API cost rather than naive tokens × price.
+    cache_creation_input_tokens: int = 0
+    cache_read_input_tokens: int = 0
+    # Lever 2: model tiering — Haiku for routing states, Sonnet for reasoning.
+    # Per-model token counts so cost calculation uses the right price.
+    haiku_input_tokens: int = 0
+    haiku_output_tokens: int = 0
+    sonnet_input_tokens: int = 0
+    sonnet_output_tokens: int = 0
 
 
 class IncidentCommander:
@@ -272,6 +374,12 @@ class IncidentCommander:
         self.total_tokens = 0
         self.input_tokens = 0
         self.output_tokens = 0
+        self.cache_creation_input_tokens = 0
+        self.cache_read_input_tokens = 0
+        self.haiku_input_tokens = 0
+        self.haiku_output_tokens = 0
+        self.sonnet_input_tokens = 0
+        self.sonnet_output_tokens = 0
 
     def _get_tools(self) -> list[dict]:
         allowlist = _STATE_TOOL_ALLOWLIST.get(self.state)
@@ -420,17 +528,46 @@ class IncidentCommander:
             if messages and messages[-1]["role"] == "assistant":
                 messages.append({"role": "user", "content": "Continue the investigation."})
 
+            # Lever 2: per-state model tiering. Haiku for routing, Sonnet for reasoning.
+            call_model = _STATE_MODEL.get(self.state, self.model)
+
+            # Lever 1: prompt caching. cache_control on the system block caches
+            # everything up to and including system (so the tools array — which is
+            # static within a state — is also cached). Within a single state's
+            # multi-turn loop, all subsequent calls read from cache at 0.1x cost.
             response = self.client.messages.create(
-                model=self.model,
+                model=call_model,
                 max_tokens=_STATE_MAX_TOKENS.get(self.state, 1024),
-                system=STATE_PROMPTS[self.state],
+                system=[
+                    {
+                        "type": "text",
+                        "text": STATE_PROMPTS[self.state],
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
                 messages=messages,
                 tools=self._get_tools(),
             )
 
-            self.input_tokens += response.usage.input_tokens
-            self.output_tokens += response.usage.output_tokens
-            self.total_tokens += response.usage.input_tokens + response.usage.output_tokens
+            usage = response.usage
+            in_tokens  = getattr(usage, "input_tokens", 0) or 0
+            out_tokens = getattr(usage, "output_tokens", 0) or 0
+            cache_create = getattr(usage, "cache_creation_input_tokens", 0) or 0
+            cache_read   = getattr(usage, "cache_read_input_tokens", 0) or 0
+
+            self.input_tokens  += in_tokens
+            self.output_tokens += out_tokens
+            self.cache_creation_input_tokens += cache_create
+            self.cache_read_input_tokens     += cache_read
+            self.total_tokens  += in_tokens + out_tokens + cache_create + cache_read
+
+            # Per-model bucketing — drives accurate cost calculation downstream
+            if "haiku" in call_model:
+                self.haiku_input_tokens  += in_tokens + cache_create + cache_read
+                self.haiku_output_tokens += out_tokens
+            else:
+                self.sonnet_input_tokens  += in_tokens + cache_create + cache_read
+                self.sonnet_output_tokens += out_tokens
 
             messages.append({"role": "assistant", "content": response.content})
 
@@ -528,6 +665,12 @@ class IncidentCommander:
             output_tokens=self.output_tokens,
             duration_secs=round(time.time() - start, 2),
             incident_description=description,
+            cache_creation_input_tokens=self.cache_creation_input_tokens,
+            cache_read_input_tokens=self.cache_read_input_tokens,
+            haiku_input_tokens=self.haiku_input_tokens,
+            haiku_output_tokens=self.haiku_output_tokens,
+            sonnet_input_tokens=self.sonnet_input_tokens,
+            sonnet_output_tokens=self.sonnet_output_tokens,
         )
 
 

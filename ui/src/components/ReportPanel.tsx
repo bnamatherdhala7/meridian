@@ -75,8 +75,16 @@ export default function ReportPanel({ report }: Props) {
         </div>
         <div className="report-field">
           <div className="report-label">Cost</div>
-          <div className="report-value mono">
-            ${((report.input_tokens * 0.000003) + (report.output_tokens * 0.000015)).toFixed(4)}
+          <div
+            className="report-value mono"
+            title={report.cost_breakdown
+              ? `Haiku $${report.cost_breakdown.haiku_input_usd.toFixed(4)}in + $${report.cost_breakdown.haiku_output_usd.toFixed(4)}out · Sonnet $${report.cost_breakdown.sonnet_input_usd.toFixed(4)}in + $${report.cost_breakdown.sonnet_output_usd.toFixed(4)}out · Cache write $${report.cost_breakdown.cache_write_usd.toFixed(4)} · Cache read $${report.cost_breakdown.cache_read_usd.toFixed(4)}`
+              : 'Sonnet $3/MTok in · $15/MTok out'}
+          >
+            ${(report.cost_usd ?? ((report.input_tokens * 0.000003) + (report.output_tokens * 0.000015))).toFixed(4)}
+            {report.cache_read_input_tokens && report.cache_read_input_tokens > 0 ? (
+              <span style={{ marginLeft: 4, fontSize: 9, color: 'var(--green)' }} title="Cache hits reduced cost">↓</span>
+            ) : null}
           </div>
         </div>
       </div>

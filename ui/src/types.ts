@@ -98,6 +98,23 @@ export interface IncidentReport {
   input_tokens: number
   output_tokens: number
   duration_secs: number
+  // Cost-reduction fields — present when the backend uses prompt caching + model tiering
+  cache_creation_input_tokens?: number
+  cache_read_input_tokens?: number
+  haiku_input_tokens?: number
+  haiku_output_tokens?: number
+  sonnet_input_tokens?: number
+  sonnet_output_tokens?: number
+  cost_usd?: number
+  cost_breakdown?: {
+    haiku_input_usd: number
+    haiku_output_usd: number
+    sonnet_input_usd: number
+    sonnet_output_usd: number
+    cache_write_usd: number
+    cache_read_usd: number
+    total_usd: number
+  }
 }
 
 export interface EvalDimension {
