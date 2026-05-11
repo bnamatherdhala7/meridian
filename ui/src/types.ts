@@ -61,11 +61,30 @@ export interface RagEvent {
   hits: RagHitItem[]
 }
 
-// Unified chronological feed item
+export interface StateTransitionEntry {
+  from_state: FSMState
+  to_state: FSMState
+  reason: string
+}
+
+export interface ForecastTriggerEntry {
+  metric: string
+  device: string
+  trigger_type: 'threshold' | 'trajectory' | 'uncertainty'
+  severity: 'critical' | 'warning' | 'info'
+  projected_minutes_ahead: number | null
+  message: string
+  confidence: number
+  model: string
+}
+
+// Unified chronological feed item — timestamp_ms is epoch ms set at dispatch
 export type FeedItem =
-  | { kind: 'pre_triage'; id: string; data: PreTriageEntry }
-  | { kind: 'rag';        id: string; data: RagEvent }
-  | { kind: 'tool';       id: string; data: ToolCall }
+  | { kind: 'pre_triage'; id: string; timestamp_ms: number; data: PreTriageEntry }
+  | { kind: 'rag';        id: string; timestamp_ms: number; data: RagEvent }
+  | { kind: 'tool';       id: string; timestamp_ms: number; data: ToolCall }
+  | { kind: 'state';      id: string; timestamp_ms: number; data: StateTransitionEntry }
+  | { kind: 'forecast';   id: string; timestamp_ms: number; data: ForecastTriggerEntry }
 
 export interface IncidentReport {
   incident_id: string

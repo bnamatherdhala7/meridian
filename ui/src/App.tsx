@@ -6,6 +6,8 @@ import EvidencePanel from './components/EvidencePanel'
 import ReportPanel from './components/ReportPanel'
 import EvaluatorPanel from './components/EvaluatorPanel'
 import ForecastStrip from './components/ForecastStrip'
+import { getForecastBundle } from './data/forecasts'
+import { transitionReason } from './utils/transitionReasons'
 
 interface State {
   status: AppStatus
@@ -18,6 +20,7 @@ interface State {
   evalResults: EvalResults | null
   mttdData: MTTDData | null
   error: string | null
+  startTimeMs: number | null
 }
 
 const INITIAL: State = {
@@ -31,6 +34,7 @@ const INITIAL: State = {
   evalResults: null,
   mttdData: null,
   error: null,
+  startTimeMs: null,
 }
 
 type Action =
@@ -46,15 +50,30 @@ type Action =
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'RESET':
-      return { ...INITIAL, status: 'running' }
-    case 'STATE_CHANGE':
+      return { ...INITIAL, status: 'running', startTimeMs: Date.now() }
+    case 'STATE_CHANGE': {
+      const fromState = state.fsmState
+      const toState = action.state
+      if (fromState === toState) return state
+      const transitionItem: FeedItem = {
+        kind: 'state',
+        id: `st-${Date.now()}-${toState}`,
+        timestamp_ms: Date.now(),
+        data: {
+          from_state: fromState,
+          to_state: toState,
+          reason: transitionReason(fromState, toState),
+        },
+      }
       return {
         ...state,
-        fsmState: action.state,
-        fsmHistory: state.fsmHistory.includes(action.state)
+        fsmState: toState,
+        fsmHistory: state.fsmHistory.includes(toState)
           ? state.fsmHistory
-          : [...state.fsmHistory, action.state],
+          : [...state.fsmHistory, toState],
+        feedItems: [...state.feedItems, transitionItem],
       }
+    }
     case 'FEED_ITEM':
       return { ...state, feedItems: [...state.feedItems, action.item] }
     case 'REPORT':
@@ -147,6 +166,32 @@ export default function App() {
     dispatch({ type: 'RESET' })
     seqRef.current = 0
 
+    // Inject forecast trigger pre-alerts from the scenario's mock forecast bundle —
+    // this surfaces the proactive layer at the top of the trace, before the FSM runs
+    const bundle = getForecastBundle(scenarioId)
+    bundle.series.forEach(series => {
+      if (series.trigger.severity === 'critical' || series.trigger.severity === 'warning') {
+        dispatch({
+          type: 'FEED_ITEM',
+          item: {
+            kind: 'forecast',
+            id: `fc-${seqRef.current++}`,
+            timestamp_ms: Date.now(),
+            data: {
+              metric: series.metric,
+              device: series.device,
+              trigger_type: series.trigger.type as 'threshold' | 'trajectory' | 'uncertainty',
+              severity: series.trigger.severity,
+              projected_minutes_ahead: series.trigger.projected_minutes_ahead,
+              message: series.trigger.message,
+              confidence: series.trigger.confidence,
+              model: series.trigger.model,
+            },
+          },
+        })
+      }
+    })
+
     const es = new EventSource(`/api/run?scenario=${scenarioId}`)
     esRef.current = es
 
@@ -173,7 +218,7 @@ export default function App() {
           }
           dispatch({
             type: 'FEED_ITEM',
-            item: { kind: 'pre_triage', id: `pt-${seqRef.current++}`, data: entry },
+            item: { kind: 'pre_triage', id: `pt-${seqRef.current++}`, timestamp_ms: Date.now(), data: entry },
           })
           break
         }
@@ -184,6 +229,7 @@ export default function App() {
             item: {
               kind: 'rag',
               id: `rag-${seqRef.current++}`,
+              timestamp_ms: Date.now(),
               data: {
                 layer: event.layer,
                 phase: event.phase,
@@ -206,7 +252,7 @@ export default function App() {
             anomaly:        event.anomaly,
             timestamp:      Date.now(),
           }
-          dispatch({ type: 'FEED_ITEM', item: { kind: 'tool', id: call.id, data: call } })
+          dispatch({ type: 'FEED_ITEM', item: { kind: 'tool', id: call.id, timestamp_ms: Date.now(), data: call } })
           break
         }
 
@@ -244,7 +290,7 @@ export default function App() {
     dispatch({ type: 'SET_STATUS', status: 'idle' })
   }, [state.status])
 
-  const { status, fsmState, fsmHistory, feedItems, evidence, totalTokens, report, evalResults, mttdData, error } = state
+  const { status, fsmState, fsmHistory, feedItems, evidence, totalTokens, report, evalResults, mttdData, error, startTimeMs } = state
   const busy = status === 'running' || status === 'evaluating'
   const toolCount = feedItems.filter(f => f.kind === 'tool').length
   const ragCount  = feedItems.filter(f => f.kind === 'rag').length
@@ -351,7 +397,7 @@ export default function App() {
               </div>
             </div>
             <div className="card-body">
-              <ToolCallFeed feedItems={feedItems} />
+              <ToolCallFeed feedItems={feedItems} startTimeMs={startTimeMs} />
             </div>
           </div>
 
