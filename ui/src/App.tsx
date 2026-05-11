@@ -1,4 +1,4 @@
-import { useCallback, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import type { AppStatus, EvalResults, FeedItem, FSMState, IncidentReport, MTTDData, PreTriageEntry, ScenarioMeta, SSEEvent, ToolCall } from './types'
 import FSMDiagram from './components/FSMDiagram'
 import ToolCallFeed from './components/ToolCallFeed'
@@ -6,8 +6,11 @@ import EvidencePanel from './components/EvidencePanel'
 import ReportPanel from './components/ReportPanel'
 import EvaluatorPanel from './components/EvaluatorPanel'
 import ForecastStrip from './components/ForecastStrip'
+import FullTraceOverlay from './components/FullTraceOverlay'
+import RunHistoryPanel from './components/RunHistoryPanel'
 import { getForecastBundle } from './data/forecasts'
 import { transitionReason } from './utils/transitionReasons'
+import { clearArchivedRuns, getArchivedRuns, newRunId, saveArchivedRun, type ArchivedRun } from './utils/runArchive'
 
 interface State {
   status: AppStatus
@@ -152,6 +155,9 @@ const PATH_COLOR: Record<string, string> = {
 export default function App() {
   const [state, dispatch] = useReducer(reducer, INITIAL)
   const [scenarioId, setScenarioId] = useState<string>('packet_loss')
+  const [archivedRuns, setArchivedRuns] = useState<ArchivedRun[]>(() => getArchivedRuns())
+  const [overlayRun, setOverlayRun] = useState<ArchivedRun | null>(null)
+  const archivedRef = useRef<boolean>(false)
   const esRef = useRef<EventSource | null>(null)
   const seqRef = useRef(0)
 
@@ -288,7 +294,57 @@ export default function App() {
     setScenarioId(id)
     dispatch({ type: 'RESET' })
     dispatch({ type: 'SET_STATUS', status: 'idle' })
+    archivedRef.current = false
   }, [state.status])
+
+  // Archive the current run when eval completes (status -> 'done').
+  // Use archivedRef to ensure a single archive per run regardless of re-render.
+  useEffect(() => {
+    if (state.status !== 'done' || state.startTimeMs === null || archivedRef.current) return
+    archivedRef.current = true
+    const endTime = Date.now()
+    const archived: ArchivedRun = {
+      id: newRunId(),
+      scenarioMeta: selectedScenario,
+      startTimeMs: state.startTimeMs,
+      endTimeMs: endTime,
+      durationMs: endTime - state.startTimeMs,
+      finalState: state.fsmState,
+      fsmHistory: state.fsmHistory,
+      feedItems: state.feedItems,
+      report: state.report,
+      evalResults: state.evalResults,
+      mttdData: state.mttdData,
+      totalTokens: state.totalTokens,
+    }
+    const next = saveArchivedRun(archived)
+    setArchivedRuns(next)
+  }, [state.status, state.startTimeMs, state.fsmState, state.fsmHistory, state.feedItems, state.report, state.evalResults, state.mttdData, state.totalTokens, selectedScenario])
+
+  // Build a synthetic ArchivedRun for the current (live or just-completed) run so
+  // the user can open the Full Trace overlay without waiting for archive.
+  const currentRunForOverlay: ArchivedRun | null = state.startTimeMs !== null && state.feedItems.length > 0
+    ? {
+        id: 'current',
+        scenarioMeta: selectedScenario,
+        startTimeMs: state.startTimeMs,
+        endTimeMs: Date.now(),
+        durationMs: Date.now() - state.startTimeMs,
+        finalState: state.fsmState,
+        fsmHistory: state.fsmHistory,
+        feedItems: state.feedItems,
+        report: state.report,
+        evalResults: state.evalResults,
+        mttdData: state.mttdData,
+        totalTokens: state.totalTokens,
+      }
+    : null
+
+  function handleClearHistory() {
+    if (!window.confirm('Clear all archived run history? This cannot be undone.')) return
+    clearArchivedRuns()
+    setArchivedRuns([])
+  }
 
   const { status, fsmState, fsmHistory, feedItems, evidence, totalTokens, report, evalResults, mttdData, error, startTimeMs } = state
   const busy = status === 'running' || status === 'evaluating'
@@ -349,6 +405,14 @@ export default function App() {
             </span>
           )}
           <span className={`status-pill ${status}`}>{STATUS_LABEL[status]}</span>
+          <button
+            className="btn-secondary"
+            onClick={() => currentRunForOverlay && setOverlayRun(currentRunForOverlay)}
+            disabled={!currentRunForOverlay}
+            title="View entire run as expanded trace with copy / download"
+          >
+            Full Trace
+          </button>
           <button
             className="btn-run"
             onClick={startInvestigation}
@@ -423,16 +487,36 @@ export default function App() {
           </div>
         </div>
 
-        <div className="card eval-card">
-          <div className="card-header">
-            <span className="card-title">Phase 3 — Evaluator</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--muted)' }}>
-              Generic vs Constrained · Precision · Recall · Token Cost
-            </span>
+        <div className="bottom-row">
+          <div className="card eval-card">
+            <div className="card-header">
+              <span className="card-title">Phase 3 — Evaluator</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--muted)' }}>
+                Generic vs Constrained · Precision · Recall · Token Cost
+              </span>
+            </div>
+            <EvaluatorPanel results={evalResults} running={status === 'evaluating'} />
           </div>
-          <EvaluatorPanel results={evalResults} running={status === 'evaluating'} />
+
+          <div className="card history-card">
+            <div className="card-header">
+              <span className="card-title">Run History</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--muted)' }}>
+                last {archivedRuns.length} run{archivedRuns.length === 1 ? '' : 's'} · click to view full trace
+              </span>
+            </div>
+            <div className="card-body" style={{ padding: '6px 10px 10px' }}>
+              <RunHistoryPanel
+                runs={archivedRuns}
+                onSelect={r => setOverlayRun(r)}
+                onClear={handleClearHistory}
+              />
+            </div>
+          </div>
         </div>
       </main>
+
+      <FullTraceOverlay run={overlayRun} onClose={() => setOverlayRun(null)} />
     </>
   )
 }
