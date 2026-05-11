@@ -142,6 +142,22 @@ The AWS DevOps Agent + Splunk proves that agentic incident investigation with Sp
 
 ---
 
+### Reactive vs. Proactive — Where Vigil Stands Alone
+
+Every product named above investigates incidents that **have already fired**. Vigil's forecasting layer makes Vigil the only entrant that fires **before** the alerting system would have — using foundation-model forecasts of network telemetry as the trigger, not threshold rules over current values.
+
+| Product | Detection Posture | Forecasting Method | Foundation Models | Multi-Trigger Logic | Status |
+|---|---|---|---|---|---|
+| Splunk IT Service Intelligence Predictive Analytics | Forward-looking | Per-metric statistical models — custom-trained per signal | No — statistical only | Threshold breach only | Generally Available |
+| Datadog Watchdog | Backward-looking | Anomaly detection (statistical) | No | Not applicable — anomaly detector | Generally Available |
+| Cisco AI Canvas / AgenticOps | Reactive | None announced | No forecasting layer in any current demo | Not applicable | Preview, 2026 |
+| AWS DevOps Agent + Splunk | Reactive | None | No | Not applicable | Generally Available (April 2025) |
+| **Vigil — Forecasting Layer** | **Proactive — 24-step horizon, ~2 hours ahead** | **Cisco Time Series Model (point) + Chronos (probability distribution) in parallel** | **Yes — two foundation models, complementary strengths** | **Threshold + Trajectory + Uncertainty** | **Mock shipped in war-room user interface** |
+
+The competitors with forecasting capability (Splunk IT Service Intelligence) lack foundation models and multi-trigger logic. The competitors with agentic capability (Cisco, AWS) lack a forecasting layer entirely. Vigil is the only entrant that combines foundation-model forecasting with agentic investigation — and the only one where the trigger types are tuned to what actually breaks in network operations (sudden threshold breaches, slow drift, and the *uncertainty signal* itself, which in network telemetry typically means something anomalous is happening).
+
+---
+
 ### The Competitive Position
 
 ```
@@ -226,6 +242,66 @@ Before the Finite State Machine runs, a rules-based classifier scores every inco
 | Border Gateway Protocol Flap | Peer reset 3×, keepalive timeout | REMEDIATING | Retrieval-Augmented Generation-grounded safe auto-remediation: `set bgp timers 30 90` |
 | Central Processing Unit Spike | 94% central processing unit, unknown process, core device | ESCALATING | CRITICAL blast radius blocks autonomous action |
 | False Positive | 5 repeat threshold breach fires, 0 corroboration | SUPPRESSED | 0 tokens, under 1 millisecond — noise filter working |
+
+---
+
+### Phase 4 — Proactive Forecasting Layer (Mock Shipped in War Room UI)
+
+Every system named in the competitive landscape today — Cisco AgenticOps, AWS DevOps Agent, Splunk's own MCP server — is **reactive**: an alert fires, then the agent investigates. Vigil's forecasting layer makes Vigil **proactive**: telemetry is monitored continuously, foundation models forecast the next 24 steps (roughly two hours ahead), and triggers fire **before** the alerting system would have. This is the layer that moves the conversation from "faster Mean Time to Resolve" to "incidents prevented."
+
+```
+                       ┌────────────────────────────────────────┐
+                       │  Splunk MCP Server (poll every N min)  │
+                       └────────────────────┬───────────────────┘
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  LAYER 1 — TELEMETRY INGESTION                                         │
+│  512-step rolling buffer per device × metric                           │
+│  (Border Gateway Protocol routes · Central Processing Unit ·           │
+│   packet drop · interface errors)                                      │
+└────────────────────────────────────────┬───────────────────────────────┘
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  LAYER 2 — FORECAST ENGINE          (24-step horizon · ~2h ahead)      │
+│                                                                        │
+│  ◆ Cisco Time Series Model           ◆ Chronos-T5-Small                │
+│    point forecast                      P10 / P50 / P90 distribution    │
+│    (best on Border Gateway Protocol —  (calibrated confidence — drives │
+│     Mean Absolute Scaled Error 0.80)    suppress vs. escalate routing) │
+└────────────────────────────────────────┬───────────────────────────────┘
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  LAYER 3 — TRIGGER EVALUATION                                          │
+│                                                                        │
+│  THRESHOLD trigger    → P50 forecast breaches hard limit in horizon    │
+│  TRAJECTORY trigger   → slow drift never crosses limit but trending    │
+│  UNCERTAINTY trigger  → P90 is dangerous even when P50 looks fine      │
+└────────────────────────────────────────┬───────────────────────────────┘
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  LAYER 4 — FINITE STATE MACHINE INVESTIGATION (existing Phase 2)       │
+│  Forecast snapshot attached as audit-trail metadata to every decision  │
+└────────────────────────────────────────┬───────────────────────────────┘
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  FEEDBACK LOOP                                                         │
+│  Log forecast accuracy vs. actual outcome → labeled fine-tuning corpus │
+│  → Priority 3 from the model evaluation roadmap: supervised            │
+│    fine-tuning of Cisco Time Series Model on real Splunk incidents     │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+**What the war-room UI shows today:** A new Forecast Strip at the top of the dashboard renders all three signals per scenario — Border Gateway Protocol route count, Central Processing Unit utilisation, and packet drop rate — with the 60-step history, 24-step forecast, and shaded P10–P90 confidence band overlaid. Triggers fire visually as coloured pills: orange for threshold breach (`T−18min` countdown), amber for trajectory drift, violet for uncertainty. For the False Positive scenario the trigger pill stays green, visually confirming the alerting system was wrong before the Finite State Machine even runs — the highest-leverage demonstration of the value proposition.
+
+**What is real and what is mock:** The four scenarios ship with pre-computed forecast fixtures matched to each incident's signature. The data is fixed (not live model inference) so the visual story is consistent and reproducible. The architecture, the trigger logic, and the user interface are real and shippable; wiring this layer to live Cisco Time Series Model and Chronos endpoints is roughly one week of work and is gated on Priority 0 from the model evaluation roadmap (Cisco exposing quantile outputs via Application Programming Interface).
+
+**Three knowledge sources, three time orientations:** With the forecast layer, Vigil now has a knowledge source per time orientation — and no current competitor has all three.
+
+| Time Orientation | Knowledge Source | Purpose |
+|---|---|---|
+| **Past** | Pinecone `vigil-incident-memory` — 30 past resolutions | Has this incident type been seen before, and what fixed it? |
+| **Present** | Pre-triage classifier + Splunk telemetry | What is happening right now? Is the alert credible? |
+| **Future** | Cisco Time Series Model + Chronos forecast engine | What will happen in the next 24 steps? Should the Finite State Machine run *now* rather than wait for the alert? |
 
 ---
 

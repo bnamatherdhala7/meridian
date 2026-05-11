@@ -872,3 +872,36 @@ html, body {
 
 /* ── Focus rings ─────────────────────────────────────────────────────── */
 *:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* ── Forecast Strip (proactive layer) ────────────────────────────────── */
+.forecast-card-container {
+  flex-shrink: 0;
+}
+
+.forecast-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px 12px 12px;
+}
+
+.forecast-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.forecast-card:hover {
+  transform: translateY(-1px);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+@keyframes forecastPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.78; transform: scale(0.97); }
+}
+
+@media (max-width: 1100px) {
+  .forecast-grid {
+    grid-template-columns: 1fr;
+  }
+}

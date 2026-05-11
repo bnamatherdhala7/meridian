@@ -321,6 +321,68 @@ Alert
 
 ---
 
+## Proactive Forecasting Layer — The Visual Difference
+
+Every system named above is **reactive**: an alert fires, then the agent investigates. Vigil's forecasting layer makes Vigil **proactive**: telemetry is monitored continuously, foundation models forecast the next 24 steps (~2 hours ahead), and triggers fire *before* the alerting system would have.
+
+The war-room UI ships a Forecast Strip that renders this layer on screen — three sparkline cards (Border Gateway Protocol route count, Central Processing Unit, packet drop) per scenario, each with 60-step history, 24-step forecast, and a shaded P10–P90 confidence band. Trigger pills colour-coded by type: orange for threshold breach (`T−18min` countdown), amber for trajectory drift, violet for uncertainty, green for stable.
+
+```
+                       ┌────────────────────────────────────────┐
+                       │  Splunk MCP Server (poll every N min)  │
+                       └────────────────────┬───────────────────┘
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  LAYER 1 — TELEMETRY INGESTION                                         │
+│  512-step rolling buffer per device × metric                           │
+└────────────────────────────────────────┬───────────────────────────────┘
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  LAYER 2 — FORECAST ENGINE          (24-step horizon · ~2h ahead)      │
+│  ◆ Cisco Time Series Model           ◆ Chronos-T5-Small                │
+│    point forecast                      P10 / P50 / P90 distribution    │
+└────────────────────────────────────────┬───────────────────────────────┘
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  LAYER 3 — TRIGGER EVALUATION                                          │
+│  THRESHOLD · TRAJECTORY · UNCERTAINTY                                  │
+└────────────────────────────────────────┬───────────────────────────────┘
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  LAYER 4 — FINITE STATE MACHINE INVESTIGATION (existing)               │
+│  Forecast snapshot attached as audit-trail metadata to every decision  │
+└────────────────────────────────────────┬───────────────────────────────┘
+                                         ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│  FEEDBACK LOOP                                                         │
+│  Forecast accuracy vs. outcome → labeled fine-tuning corpus            │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Reactive vs. Proactive — Competitive Landscape
+
+| Product | Detection Posture | Forecasting Method | Foundation Models | Multi-Trigger Logic |
+|---|---|---|---|---|
+| Splunk IT Service Intelligence Predictive Analytics | Forward-looking | Per-metric statistical models | No | Threshold breach only |
+| Datadog Watchdog | Backward-looking | Anomaly detection (statistical) | No | Not applicable |
+| Cisco AI Canvas / AgenticOps | Reactive | None announced | No forecasting layer | Not applicable |
+| AWS DevOps Agent + Splunk | Reactive | None | No | Not applicable |
+| **Vigil — Forecasting Layer** | **Proactive — 24 steps ahead** | **Cisco Time Series Model + Chronos in parallel** | **Yes — two foundation models** | **Threshold + Trajectory + Uncertainty** |
+
+Vigil is the only entrant that combines foundation-model forecasting with agentic investigation — and the only one where the trigger types are tuned to what actually breaks in network operations.
+
+**Three knowledge sources, three time orientations:**
+
+| Time Orientation | Knowledge Source | Purpose |
+|---|---|---|
+| **Past** | Pinecone `vigil-incident-memory` — 30 past resolutions | Has this been seen before, and what fixed it? |
+| **Present** | Pre-triage classifier + Splunk telemetry | What is happening right now? Is the alert credible? |
+| **Future** | Cisco Time Series Model + Chronos forecast | What will happen in the next 24 steps? |
+
+**Mock status:** The four scenarios ship with pre-computed forecast fixtures. The architecture, trigger logic, and user interface are real and shippable; wiring to live Cisco Time Series Model and Chronos endpoints is roughly one week of work, gated on Priority 0 from `docs/model-evaluation.md` (Cisco exposing quantile outputs via Application Programming Interface).
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |

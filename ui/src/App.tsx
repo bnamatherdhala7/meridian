@@ -5,6 +5,7 @@ import ToolCallFeed from './components/ToolCallFeed'
 import EvidencePanel from './components/EvidencePanel'
 import ReportPanel from './components/ReportPanel'
 import EvaluatorPanel from './components/EvaluatorPanel'
+import ForecastStrip from './components/ForecastStrip'
 
 interface State {
   status: AppStatus
@@ -324,6 +325,8 @@ export default function App() {
       )}
 
       <main className={`app-main${error ? ' app-main--has-banner' : ''}`}>
+        <ForecastStrip scenarioId={scenarioId} />
+
         <div className="card fsm-card">
           <div className="card-header">
             <span className="card-title">FSM State Machine</span>
