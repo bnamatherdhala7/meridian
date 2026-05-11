@@ -321,6 +321,53 @@ Alert
 
 ---
 
+## The Broader Competitive Landscape
+
+Vigil's competitors span four tiers — network-operations specialists, observability platforms, legacy AIOps, and forecasting specialists. Full vendor-by-vendor breakdown lives in **[`docs/competitive-landscape.md`](./docs/competitive-landscape.md)**. The market map:
+
+```
+                          AGENTIC / AUTONOMOUS INVESTIGATION
+                                       ▲
+                                       │
+                  Cisco AgenticOps      │      AWS DevOps Agent + Splunk
+                  (preview, 2025–26)    │      (GA, April 2025)
+                  Juniper Marvis        │      Datadog Bits AI
+                  (generative assistant)│      Dynatrace Davis AI
+                                        │      New Relic AI
+                  ╔═══════════════════╗ │
+                  ║      VIGIL         ║│
+                  ║  network + agentic ║│
+                  ║  + Splunk + Cisco  ║│
+                  ╚═══════════════════╝ │
+                                        │
+   ─── NETWORK ────────────────────────┼───────────────────── GENERAL ─────►
+   ── SPECIALIST ──                    │                     OBSERVABILITY
+                                        │
+                  HPE Aruba Central     │      Splunk IT Service Intelligence
+                  Arista CloudVision    │      Datadog Watchdog · Elastic
+                  Extreme CoPilot       │      LogicMonitor · BigPanda
+                  Nokia NetGuard        │      Moogsoft · ServiceNow ITOM
+                                        │      PagerDuty AIOps · BMC Helix
+                                        ▼
+                          REACTIVE CORRELATION / ANALYTICS
+```
+
+**Vigil is the only product in the upper-left quadrant** — network-specialist + agentic investigation — and the only product anywhere on the map combining: Cisco specialization, Splunk integration, multi-step agentic investigation, foundation-model time-series forecasting, Retrieval-Augmented Generation incident memory, and a structured audit trail.
+
+### Five-Tier Summary
+
+| Tier | Category | Representative Vendors | Vigil's Edge |
+|---|---|---|---|
+| **1** | Network ops + agentic AI | Cisco AgenticOps (preview), Juniper Marvis, HPE Aruba, Arista, Extreme, Nokia | Cisco AgenticOps is closest but not shipped; every other Tier 1 vendor is locked to its own hardware |
+| **2** | General observability + agentic AI | AWS DevOps Agent + Splunk, Datadog Bits AI, Dynatrace Davis, New Relic AI | Application-layer focus, no Cisco specialization, mostly single-turn assistants |
+| **3** | Legacy AIOps platforms | BigPanda, Moogsoft, ServiceNow ITOM, PagerDuty, BMC Helix, LogicMonitor, IBM Watson | Correlation only — no investigation, no agentic capability, no forecasting |
+| **4** | Forecasting / predictive | Splunk IT Service Intelligence Predictive Analytics, Datadog Forecasting, AWS Lookout, Anodot | Statistical models, not foundation models; no agentic investigation |
+| **5** | Adjacent / emerging | Resolve.ai, NetBrain, IP Fabric, Forward Networks, LangGraph / CrewAI | Non-network-specialist or framework-only |
+
+**One-sentence statement:** every other product is either network-specialist without Splunk and agentic depth, or general observability without Cisco specialization, or an AIOps platform without investigation depth. Vigil is the only product combining all three.
+
+---
+
 ## Proactive Forecasting Layer — The Visual Difference
 
 Every system named above is **reactive**: an alert fires, then the agent investigates. Vigil's forecasting layer makes Vigil **proactive**: telemetry is monitored continuously, foundation models forecast the next 24 steps (~2 hours ahead), and triggers fire *before* the alerting system would have.

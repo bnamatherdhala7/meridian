@@ -184,6 +184,63 @@ When AI Canvas ships, Vigil's Finite State Machine becomes a Skills workflow in 
 
 ---
 
+### The Broader Market — Where Every Competitor Sits
+
+Vigil's competitive landscape extends well beyond Cisco and Splunk. The full market organizes along two axes: **scope** (network-specialist vs. general observability) and **autonomy** (reactive correlation vs. agentic investigation). The complete vendor-by-vendor breakdown lives in **[`docs/competitive-landscape.md`](./competitive-landscape.md)**. The map:
+
+```
+                          AGENTIC / AUTONOMOUS INVESTIGATION
+                                       ▲
+                                       │
+                  Cisco AgenticOps      │      AWS DevOps Agent + Splunk
+                  (preview, 2025–26)    │      (generally available, April 2025)
+                  Juniper Marvis        │      Datadog Bits AI
+                  (generative assistant)│      (single-turn assistant)
+                                        │      Dynatrace Davis AI
+                  ╔═══════════════════╗ │      (causal AI, automatic root cause)
+                  ║      VIGIL         ║│      New Relic AI
+                  ║  network + agentic ║│      (conversational assistant)
+                  ║  + Splunk + Cisco  ║│
+                  ╚═══════════════════╝ │
+                                        │
+   ─── NETWORK ────────────────────────┼───────────────────── GENERAL ─────►
+   ── SPECIALIST ──                    │                     OBSERVABILITY
+                                        │
+                  HPE Aruba Central     │      Splunk IT Service Intelligence
+                  AIOps                 │      Datadog Watchdog
+                  Arista CloudVision    │      Elastic Observability
+                  CV-AI                 │      LogicMonitor LM Envision
+                  Extreme ExtremeCloud  │      BigPanda · Moogsoft (Dell)
+                  Nokia NetGuard        │      ServiceNow ITOM · PagerDuty
+                                        │      AIOps · BMC Helix · IBM Watson
+                                        ▼
+                          REACTIVE CORRELATION / ANALYTICS
+```
+
+**Vigil is the only product in the upper-left quadrant — network-specialist + agentic investigation — and the only product anywhere on the map that combines all of:** Cisco network specialization, Splunk integration, multi-step agentic investigation, foundation-model time-series forecasting, Retrieval-Augmented Generation incident memory, and a structured audit trail.
+
+#### Five-Tier Competitive Summary
+
+| Tier | Category | Representative Vendors | Where Vigil Wins |
+|---|---|---|---|
+| **Tier 1** | Network operations + agentic AI | Cisco AgenticOps (preview), Juniper Marvis, HPE Aruba Central, Arista CloudVision, Extreme CoPilot, Nokia | Cisco AgenticOps is closest but not shipped; every other Tier 1 vendor is locked to its own hardware (no Cisco Catalyst integration) |
+| **Tier 2** | General observability + agentic AI | AWS DevOps Agent + Splunk, Datadog Bits AI, Dynatrace Davis, New Relic AI | Application-layer focus; no Cisco network specialization; mostly single-turn assistants |
+| **Tier 3** | Legacy AIOps platforms | BigPanda, Moogsoft (Dell), ServiceNow ITOM, PagerDuty AIOps, BMC Helix, LogicMonitor, IBM Watson AIOps | Event correlation only — no investigation, no agentic capability, no forecasting |
+| **Tier 4** | Forecasting / predictive specialists | Splunk IT Service Intelligence Predictive Analytics, Dynatrace Davis (predictive), Datadog Forecasting, AWS Lookout for Metrics, Anodot | Statistical models, not foundation models. Threshold trigger only. No agentic investigation. |
+| **Tier 5** | Adjacent / emerging | Resolve.ai, Cleric, NetBrain, IP Fabric, Forward Networks, LangGraph/CrewAI/AutoGen | Either non-network-specialist or framework-only (not a shipped product) |
+
+#### Vigil's Three Defensible Advantages
+
+| Advantage | Why It Holds |
+|---|---|
+| **Cisco + Splunk in one investigation loop** | Owned by the same parent post-acquisition, but no shipped product bridges them. Every Tier 1 vendor is locked to its own hardware. Every Tier 2 vendor is locked to its own observability data plane. |
+| **Foundation-model forecasting + agentic investigation in one system** | Tier 4 forecasts but does not investigate. Tier 1 and Tier 2 investigate but do not forecast. Vigil is the only product where a foundation-model trigger fires the Finite State Machine investigation and the forecast becomes part of the audit trail. |
+| **Built to absorb Cisco's roadmap, not race it** | When AI Canvas ships, Vigil's Finite State Machine maps to a Canvas workflow. When the Deep Network Model ships, the Large Language Model call swaps out. The Retrieval-Augmented Generation layers, evaluator, forecasting layer, and audit trail all remain. Partnership posture, not competitive posture. |
+
+The one-sentence statement: **every other product is either network-specialist without Splunk and agentic depth, or general observability without Cisco network specialization, or an AIOps platform without investigation depth. Vigil is the only product combining all three.**
+
+---
+
 ## What Vigil Built — Three Phases
 
 ### Phase 1 — Model Context Protocol Bridge Layer
