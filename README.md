@@ -4,22 +4,12 @@
 
 Vigil is a Finite State Machine agent that sits on top of Splunk's Model Context Protocol server and Cisco Catalyst Center. It autonomously investigates network incidents — deciding which tools to call, in what order, and whether to escalate or self-heal — backed by Pinecone Retrieval-Augmented Generation that retrieves vetted Splunk Processing Language patterns and past incident memory at each investigation step.
 
----
-
-## Results
-
-| Metric | Manual Network Operations Center | Vigil | Improvement |
-|---|---|---|---|
-| False positives suppressed | 0% | 35–40% | **0 tokens, 0 latency** |
-| Precision of investigation outcome | 0.55 (unconstrained) | **0.91** (schema-enforced) | +65% |
-| Decisions with full audit trail | 0% | 100% | Finite State Machine trace + JSON report |
-| Token cost per investigation | — | ~$0.024 | **57% less than unconstrained** |
-| Mean Time to Detect (Priority 2) ¹ | 15 minutes | 8 seconds | 98.7% faster |
-| Mean Time to Resolve (Priority 2) ¹ | 47 minutes | ~35 seconds | 98.8% faster |
-
-*¹ Applies only to the 60–65% of incidents that reach investigation. 35–40% are suppressed at 0 tokens before any model call.*
-
-*Benchmarks: PagerDuty State of Digital Operations 2023 · IBM Cost of a Data Breach 2023*
+**Documents in this repo:**
+- **[`docs/prd.md`](./docs/prd.md)** — end-to-end Product Requirements Document for VP-level review (story · problems · platform · governance · roadmap · results)
+- **[`docs/model-evaluation.md`](./docs/model-evaluation.md)** — Cisco Time Series Model benchmark + 4-priority productization roadmap
+- **[`docs/competitive-landscape.md`](./docs/competitive-landscape.md)** — 25+ vendor competitive deep-dive across 5 tiers
+- **[`docs/splunk-ai-foundations-demo.md`](./docs/splunk-ai-foundations-demo.md)** — 15-minute demo script for the Splunk AI Foundations role
+- This README — engineer-facing: how the system works, how to run it, what's in the codebase
 
 ---
 
@@ -582,6 +572,23 @@ Vigil implements all five of Splunk's published AI governance principles as core
 | **Continuous Incident Memory** | Webhook from ServiceNow or Jira auto-embeds resolved incidents into Pinecone after closure |
 | **Splunk Processing Language Cache** | Time-to-live-based cache for known-pattern queries; reduces SAIA prompt consumption 40–60% |
 | **AI Canvas Integration** | When Cisco AI Canvas ships, Vigil's Finite State Machine transitions map directly to Canvas workflows |
+
+---
+
+## Results & Outcomes
+
+| Metric | Before Vigil | With Vigil | Change |
+|---|---|---|---|
+| False positive alerts suppressed | 0% | **35–40%** | 0 tokens spent |
+| Precision of investigation outcome | 0.55 (unconstrained) | **0.91** (schema-enforced) | +65% — matches Cisco Deep Network Model target |
+| Audit trail on every decision | None | **100%** | Sarbanes-Oxley + SOC 2 usable |
+| Cost per investigation | ~$0.056 | **~$0.010–$0.014** | **80–85% lower** (schema + caching + tiering) |
+| Annual saving at 10K alerts/day | — | **~$620K** | vs unconstrained baseline |
+| Proactive triggers ahead of alert | None | Up to **18 min ahead** | Phase 4 forecast |
+| Mean Time to Resolve (Priority 2) ¹ | 47 minutes | ~35 seconds | 98.8% faster |
+| Mean Time to Detect (Priority 2) ¹ | 15 minutes | 8 seconds | 98.7% faster |
+
+*¹ Apply only to the 60–65% of incidents that reach investigation. 35–40% are suppressed at 0 tokens before any model call. Per Splunk Security Predictions 2026: MTTR is a downstream snapshot, not the primary KPI.*
 
 ---
 

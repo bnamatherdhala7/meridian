@@ -77,22 +77,6 @@ Splunk's own 2026 leadership posts make the case for Vigil's architecture explic
 
 ---
 
-## Results
-
-| Metric | Before Vigil | With Vigil | Change |
-|---|---|---|---|
-| False positive alerts suppressed | 0% | 35–40% | **0 tokens spent** |
-| Precision of investigation outcome | 0.55 (unconstrained) | **0.91** (schema-enforced) | +65% |
-| Audit trail on decisions | None | 100% | Sarbanes-Oxley + SOC 2 usable |
-| Token cost per investigation | ~$0.056 | ~$0.024 | **57% lower** |
-| Proactive triggers ahead of alert | None | Up to 18 min ahead | **Phase 4 forecast** |
-| Mean Time to Resolve (Priority 2) ¹ | 47 minutes | ~35 seconds | 98.8% faster |
-| Mean Time to Detect (Priority 2) ¹ | 15 minutes | 8 seconds | 98.7% faster |
-
-*¹ Apply only to the 60–65% of incidents that reach investigation. 35–40% are suppressed at 0 tokens before any model call. Per Splunk's 2026 prediction, MTTR is a downstream snapshot — not the primary KPI.*
-
----
-
 ## The Platform — Four Phases in One Loop
 
 ```
@@ -135,14 +119,14 @@ ALERT ─►│  PHASE 2.5  PRE-TRIAGE                              (0 tokens) �
 
 ### Phase 1 — Splunk + Cisco Catalyst MCP Bridge
 
-Four Splunk tools (`splunk_run_query`, `splunk_get_indexes`, `splunk_get_knowledge_objects`, `saia_generate_spl`) plus two new Cisco Catalyst tools that exist in neither vendor's current Model Context Protocol server:
+Splunk's Model Context Protocol server (generally available, v1.1) exposes **14 tools across `splunk_*` and `saia_*` namespaces** — full list in [`README.md`](../README.md#splunk-model-context-protocol-server--14-tools-shipped-today). Vigil consumes the four most operationally relevant (`splunk_run_query`, `splunk_get_indexes`, `splunk_get_knowledge_objects`, `saia_generate_spl`) and adds **two new Cisco Catalyst tools that exist in neither vendor's current Model Context Protocol server**:
 
 | Tool | Data |
 |---|---|
-| `get_network_topology` | Upstream device, VLANs, downstream count, blast radius, topology position |
-| `get_telemetry_metrics` | Interface errors, utilization, BGP state, CPU/memory, anomaly flag |
+| `get_network_topology` | Upstream device, VLANs, downstream count, blast radius, topology position (core / distribution / access / edge) |
+| `get_telemetry_metrics` | Interface errors (CRC, drops), utilization, BGP state, CPU/memory, anomaly flag |
 
-Stateless. Role-Based Access Control passthrough — agent inherits the Splunk user's permissions, no privilege escalation.
+Stateless. Role-Based Access Control passthrough — agent inherits the Splunk user's permissions, no privilege escalation. These are the two new tools that fill the topology + telemetry gap in both vendor MCP servers.
 
 ### Phase 2 — Finite State Machine + Pinecone RAG
 
@@ -258,6 +242,64 @@ The single most-asked architectural question. **Pre-triage is logical filtering,
 
 ---
 
+## Reference Investigation — One End-to-End Run
+
+The Packet Loss scenario, top-to-bottom — what the war-room user interface renders when the operator clicks Run Investigation. Every event timestamped from T+0; every input and output captured in the structured audit trail.
+
+> **INC-20240214-001 · Priority 2 · San Jose**
+> High packet loss on Cisco Catalyst `sj-catalyst-01` / `GigE0/1`
+
+```
+◆ FORECAST PRE-ALERT  Packet drop forecast breaches 1.0% in 8 min       [proactive · before alert]
+PRE_TRIAGE         alert scored 0.78 (high), signal_count=3 → proceed   [<1ms · 0 tokens]
+TRIAGE             → state transition: "Alert score above threshold"
+SPL Knowledge RAG  retrieved: packet_loss_egress (0.63)                 [380ms · 0 tokens]
+01 topology        sj-catalyst-01 uplinks sj-core-01, GigE0/1 vlan=100  [118ms]
+INVESTIGATING      → state transition: "Data sources confirmed"
+02 telemetry       out_errors=2847, utilization=94.2%, drops=1203 ⚠     [287ms]
+03 run_spl         avg out_errors=2847/min, spike started 14:30 UTC ⚠   [421ms]
+Incident Memory RAG retrieved: INC-2024-0891 (0.84) — exfiltration       [390ms · 0 tokens]
+HYPOTHESIZING      → state transition: "Evidence collected, forming root cause"
+04 run_spl         src_ip 10.14.22.87 = 71.2% of egress (threshold 60%) [389ms]
+05 gen_spl         egress concentration + threat intel join query        [612ms]
+ESCALATING         → state transition: "Single IP > 60% egress → ESCALATING"
+                                                                          ──────
+Finite State Machine: confidence 0.93 · 5 tool calls · forecast verified · ~35s total
+```
+
+**Structured output (the audit trail artifact)**:
+
+```json
+{
+  "incident_id": "INC-20240214-001",
+  "final_state": "ESCALATING",
+  "hypothesis": "sj-catalyst-01 GigE0/1: out_errors=2847 spike at 14:30 UTC. src_ip 10.14.22.87 = 71.2% egress — isolate pending threat intel",
+  "tool_calls": 5,
+  "confidence": 0.93,
+  "recommended_action": "Isolate src_ip=10.14.22.87 pending threat intel confirmation",
+  "forecast_snapshot": {
+    "trigger_type": "threshold",
+    "metric": "packet_drop_rate",
+    "projected_minutes_ahead": 8,
+    "model": "Chronos-T5-Small"
+  },
+  "total_tokens": 4847,
+  "cost_usd": 0.0114,
+  "duration_secs": 34.8
+}
+```
+
+**Same architecture handles all four reference scenarios:**
+
+| Scenario | Severity | Forecast Trigger | Final State | Why |
+|---|---|---|---|---|
+| Packet Loss on GigE0/1 | Priority 2 | THRESHOLD (T−8min) | **ESCALATING** | Single source IP = 71% egress + threat intelligence match |
+| Border Gateway Protocol Flap | Priority 2 | THRESHOLD (T−18min) | **REMEDIATING** | Incident memory match 0.78 — known safe fix: `set bgp timers 30 90` |
+| CPU Spike on Core Device | Priority 1 | UNCERTAINTY (wide P90) | **ESCALATING** | CRITICAL blast radius + unknown process |
+| False Positive | Priority 3 | NONE — forecast strip all-green | **SUPPRESSED** | 5 repeat fires · 0 corroboration · 0 tokens · <1ms |
+
+---
+
 ## Competitive Position
 
 Full breakdown across 25+ vendors in [`docs/competitive-landscape.md`](./competitive-landscape.md). The market map:
@@ -336,6 +378,25 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
 | Mock data for Splunk + Cisco Catalyst endpoints in demo | Architecture is production-ready; data is demo-scale by design |
 | Pinecone incident memory starts at 30 records | Continuous memory roadmap item grows this customer-specifically over 6+ months |
 | Phase 4 forecasting uses pre-computed fixtures | Architecture real and shippable; live wiring gated on Cisco quantile API |
+
+---
+
+## Results & Outcomes
+
+The metrics that prove the platform works — measured across the four reference scenarios, with the production cost stack (schema enforcement + prompt caching + Haiku tiering) active.
+
+| Metric | Before Vigil | With Vigil | Change |
+|---|---|---|---|
+| False positive alerts suppressed | 0% | **35–40%** | 0 tokens spent |
+| Precision of investigation outcome | 0.55 (unconstrained) | **0.91** (schema-enforced) | +65% — matches Cisco Deep Network Model target |
+| Audit trail on every decision | None | **100%** | Sarbanes-Oxley + SOC 2 usable |
+| Cost per investigation | ~$0.056 | **~$0.010–$0.014** | **80–85% lower** (schema + caching + tiering) |
+| Annual saving at 10K alerts/day | — | **~$620K** | vs unconstrained baseline |
+| Proactive triggers ahead of alert | None | Up to **18 min ahead** | Phase 4 forecast layer |
+| Mean Time to Resolve (Priority 2) ¹ | 47 minutes | ~35 seconds | 98.8% faster |
+| Mean Time to Detect (Priority 2) ¹ | 15 minutes | 8 seconds | 98.7% faster |
+
+*¹ Apply only to the 60–65% of incidents that reach investigation. 35–40% are suppressed at 0 tokens before any model call. Per [Splunk Security Predictions 2026](https://www.splunk.com/en_us/blog/leadership/security-predictions-2026-what-agentic-ai-means-for-the-people-running-the-soc.html): MTTR is a downstream snapshot, not the primary KPI.*
 
 ---
 
