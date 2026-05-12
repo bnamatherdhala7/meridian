@@ -370,6 +370,62 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
 | **Cisco AgenticOps** | Vigil's Finite State Machine registers as a Canvas Workflow Template; customers further fork inside Canvas | **Configurable per Canvas tenant** |
 | **Cisco Cloud Security** | Add step: "Cross-reference Cisco threat intelligence before ESCALATING" + auto-isolate on confirmed match | Autonomous on known-pattern threats; **human approval on novel signatures** |
 
+### The Orchestrator Pattern — Vigil MCP Sits Between Claude and Every Other MCP
+
+```
+                  ┌──────────────────────────────────────────────────────────┐
+                  │              CLAUDE (the AI agent)                         │
+                  │   Receives alert · executes tools · generates report       │
+                  └──────────────────────────┬───────────────────────────────┘
+                                             │ alert + investigation intent
+                                             ▼
+                  ┌──────────────────────────────────────────────────────────┐
+                  │           VIGIL MCP — the orchestrator                     │
+                  │                                                            │
+                  │   manifest.yaml: FSM transition rules · RAG retrieval      │
+                  │   triggers · forecast confidence bands · audit schema      │
+                  │   · approval thresholds · guardrails                       │
+                  └─────┬─────────────────────┬─────────────────────┬────────┘
+                        │                     │                     │
+                        ▼                     ▼                     ▼
+              ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐
+              │    Splunk MCP       │ │ Cisco Catalyst      │ │  Any other MCP     │
+              │    (14 tools, GA)   │ │       MCP            │ │                    │
+              │                     │ │  + 2 new Vigil      │ │  ServiceNow,       │
+              │  splunk_run_query   │ │    tools             │ │  PagerDuty,        │
+              │  splunk_get_indexes │ │                      │ │  Slack, Jira,      │
+              │  saia_generate_spl  │ │  get_network_topology│ │  Cisco threat      │
+              │  splunk_get_*       │ │  get_telemetry_metrics│ │  intel, GLaaS     │
+              └────────────────────┘ └────────────────────┘ └────────────────────┘
+
+                       What lives inside Vigil's orchestrator manifest
+
+   ┌─────────────────────────┐ ┌─────────────────────────┐ ┌─────────────────────────┐
+   │  Tier 1 — bootstrap      │ │  Tier 2 — shared          │ │  Tier 3 — on-demand      │
+   │  (always loaded)         │ │  (network-domain         │ │  (loaded per             │
+   │                          │ │   standards)             │ │   investigation)         │
+   │  • FSM state machine     │ │  • 20 vetted SPL         │ │  • Forecast snapshot     │
+   │    definitions           │ │    patterns               │ │    for current device   │
+   │  • RBAC passthrough      │ │  • 30 past incident      │ │  • Prior tool-call       │
+   │  • Audit JSON schema     │ │    memories              │ │    results in context    │
+   │  • Default approval      │ │  • Threshold rules       │ │  • Customer-specific     │
+   │    bands                 │ │  • 3 trigger types       │ │    Skill imports         │
+   │  • Cost-tier model map   │ │  • Confidence bands      │ │  • Scenario fixtures     │
+   └─────────────────────────┘ └─────────────────────────┘ └─────────────────────────┘
+
+           Workflows defined in manifest — each maps triggers to FSM transitions + MCP tools
+
+   ┌────────────────────────┐  ┌────────────────────────┐  ┌────────────────────────┐  ┌────────────────────────┐
+   │  incident_investigation │  │  predictive_alerting    │  │  false_positive_       │  │  audit_report_         │
+   │                         │  │                         │  │  suppression           │  │  generation            │
+   │  FSM + Splunk MCP +     │  │  Phase 4 forecast       │  │                        │  │                        │
+   │  Cisco Catalyst MCP     │  │  trigger → FSM          │  │  Pre-triage rules      │  │  Pydantic JSON         │
+   │  → ESC / REM / RES      │  │  → pre-alert            │  │  → SUPPRESSED           │  │  schema → audit trail  │
+   └────────────────────────┘  └────────────────────────┘  └────────────────────────┘  └────────────────────────┘
+```
+
+**The key insight:** The Vigil MCP **does not call** Splunk MCP or Cisco Catalyst MCP — **Claude does**. Vigil's manifest tells Claude *which tools to call, in what Finite State Machine order, with what approval thresholds, and how to record the audit trail.* Claude holds all the MCP connections in a single session and sequences them through Vigil's manifest. **You can add any MCP to Claude (or to a Cisco AgenticOps Canvas tenant) and reference its tools from Vigil's manifest — that is how the platform scales.**
+
 ### The Pattern Visualized — One Canonical Engine, Forked Per Team
 
 ```

@@ -243,7 +243,7 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 ### Beat 8 — Vigil as a Platform ⭐ (2 min)
 
 **JD hook:** *"Drive AI Platform Strategy"* + *"shipped as a world-class platform to our global customers and developer ecosystem."*
-**Show:** PRD §14 — "How Vigil Scales as a Platform" — start with the identity definition, then the diagram.
+**Show:** PRD §14 — "How Vigil Scales as a Platform" — start with the identity definition, then the **Orchestrator Pattern diagram**, then the team customization diagram.
 
 **Talk track:**
 
@@ -251,9 +251,15 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 
 > "The identity in one sentence: **Vigil is an MCP-guided workflow. Customizable, auditable, human-in-the-loop. Each team forks the default workflow, adds their own steps, and configures their own confidence thresholds — autonomous on routine cases, human approval on novel or high-risk.**"
 
-*Show the diagram — canonical workflow at top, three team forks in the middle, MCP registry at the bottom.*
+*Show the **Orchestrator Pattern diagram** (Claude → Vigil MCP → Splunk MCP + Cisco Catalyst MCP + any other MCP).*
 
-> "Visualized: one canonical workflow at the top. Three team forks in the middle — each with their own custom steps and their own approval threshold. **Splunk SecOps requires human approval on every ESCALATING; Splunk Observability requires analyst approval before public status-page publication; Cisco AgenticOps configures per Canvas tenant.** Every custom step they add registers as a new MCP tool — and flows back into the registry, available to every other team's workflow."
+> "Here's the technical pattern. **Claude — the AI agent — sits at the top.** It receives the alert and executes tools. **Vigil MCP sits in the middle as the orchestrator.** Vigil's manifest defines the Finite State Machine transitions, RAG retrieval triggers, forecast confidence bands, audit schema, approval thresholds. **At the bottom are the downstream MCPs** — Splunk MCP with its 14 tools, Cisco Catalyst MCP with the two new Vigil-contributed tools, and any other MCP a team adds — ServiceNow, PagerDuty, Slack, GLaaS."
+
+> "**The key insight that makes this scale:** Vigil MCP doesn't call Splunk MCP — Claude does. The manifest tells Claude which tools to call, in what order, with what approval thresholds. You can add any MCP to Claude.ai or any Cisco AgenticOps Canvas tenant and reference its tools from Vigil's manifest. **That is how the platform scales — by adding tools to the catalog, not by rewriting Vigil.**"
+
+*Now show the team customization diagram — canonical workflow at top, three team forks in the middle, MCP registry at the bottom.*
+
+> "And here's how that scales business-wise. One canonical workflow at the top. Three team forks in the middle — each with their own custom steps and their own approval threshold. **Splunk SecOps requires human approval on every ESCALATING; Splunk Observability requires analyst approval before public status-page publication; Cisco AgenticOps configures per Canvas tenant.** Every custom step they add registers as a new MCP tool — and flows back into the registry, available to every other team's workflow."
 
 > "**Why this scales.** Onboarding a new team takes one to two weeks versus six to twelve months building from scratch. Knowledge accumulates in one registry, not in five silos. One governance posture, configured per team via thresholds — not five inconsistent audit formats. Every Claude release, every Cisco Time Series Model release, improves every team's workflow simultaneously."
 
