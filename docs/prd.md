@@ -13,6 +13,8 @@
 
 Cisco and Splunk have both shipped Model Context Protocol servers with network operations tools. Neither has shipped the reasoning layer that connects them, sequences the queries, and makes the escalate-or-fix decision at 2am. Vigil is that layer — built, running, and measured. **The question Vigil answers is not how fast the investigation runs — it is whether the investigation needed to happen at all.**
 
+Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop, grounded by domain-specific foundation models — Cisco's Time Series Model for forecasting, Anthropic Claude for reasoning, OpenAI embeddings for retrieval. It's mock data and a single-engineer prototype, but every responsibility in your job description maps to something I built and measured here."
+
 ---
 
 ## The Five Customer Problems — In Splunk's Own Words
