@@ -335,41 +335,6 @@ Finite State Machine: confidence 0.93 · 5 tool calls · forecast verified · ~3
 
 ---
 
-## Vigil as a Platform — From Application to Substrate
-
-> Treated as a standalone incident commander, Vigil ships one application. Treated as the **agentic reasoning substrate**, the same investment becomes the platform layer that other Cisco and Splunk products — and customer-built workflows — call upon. **Same code, 10× the surface area.**
-
-### Five Platform Levers
-
-| Lever | Mechanism | Outcome |
-|---|---|---|
-| **1. Vigil as Substrate, not Feature** | Other Cisco / Splunk modules (Cloud Security dashboards, Network Health, IT Service Intelligence, Network Detection and Response) send raw telemetry to Vigil's Application Programming Interface instead of each building their own agentic AI feature | Security and operations intelligence becomes centralized. Updating one detection rule, one threshold, one curated Splunk Processing Language pattern, or one Python tool in the Vigil core — every feature on the substrate gets smarter immediately. |
-| **2. Standardized Connectivity via Model Context Protocol** | Universal Model Context Protocol connectors expose Vigil's agents to any internal data source — databases, log stores, third-party Application Programming Interfaces — without writing custom glue code per integration | A "Network Health" feature calls Vigil's Network Analyst agent over Model Context Protocol to investigate a traffic spike. The feature ships with **zero built-in AI**. Plug-and-play. |
-| **3. Confidence as a Platform Governance Service** | The Finite State Machine's confidence-band routing becomes a platform-wide policy engine. High confidence (≥ 0.90) → platform executes the remediation autonomously. Low confidence → platform raises the agent's reasoning to a human analyst for review. | Every automated action across the Cisco / Splunk portfolio passes through one consistent risk gate. One audit trail, one governance posture, one place to set policy — Splunk's Responsible AI principles centralised, not duplicated. |
-| **4. Auto-Contributor for Continuous Capability Growth** | Vigil autonomously scans new CVE databases, competitor product capabilities, and unresolved incident patterns; proposes new detection rules, Splunk Processing Language patterns, and Skills directly to the platform's engineering team for review and merge | The platform stops being a static product. It actively seeks out and fills its own visibility gaps. Roadmap item — not shipped today — but the architecture supports it via the Phase 4 feedback loop and Phase 3 evaluator. |
-| **5. Customer-Customizable Workflows as Skill Templates** | Vigil's Finite State Machine workflows ship as forkable templates. Customers fork the default `TRIAGE → INVESTIGATING → HYPOTHESIZING → REMEDIATING / ESCALATING` path and add custom steps via a Skill Editor — "Post to internal Slack," "Open a Jira ticket," "Trigger a ServiceNow change request" — without writing a line of application code | Replaces hard-coded incident response features with an extensible playbook engine. Customers ship their own runbooks on Vigil's substrate. Reduces customer escalations to Cisco / Splunk engineering by an order of magnitude. |
-
-### Plug-and-Play Scaling — Three Audience Tiers
-
-| Audience | How They Consume Vigil | What They Get |
-|---|---|---|
-| **Internal product teams** (Splunk Security Operations, Splunk Observability, Splunk IT Service Intelligence, Cisco AgenticOps, Cisco Cloud Security) | Vigil's Finite State Machine + evaluator + Retrieval-Augmented Generation layers consumed as internal libraries; Model Context Protocol gateway for tool exposure | One investigative reasoning engine shared across the portfolio. Each product team saves roughly 6–12 months versus building their own agentic stack. **The AI Foundations charter realised.** |
-| **Customer deployments** | Hosted Vigil (Cisco / Splunk-managed) or self-hosted (customer Virtual Private Cloud) with bring-your-own data plane — their Splunk index, their Cisco Catalyst Center, their identity provider | Plug into existing telemetry and access controls. Role-Based Access Control passthrough preserves the customer's security boundary. Customer-specific incident memory grows in their Pinecone tenant over time — the proprietary corpus stays theirs. |
-| **Developer + partner ecosystem** | Skill Software Development Kit + Model Context Protocol-compliant tool registry + workflow template library + evaluator harness for measuring third-party Skills | Partners (Cisco AppDynamics, ServiceNow, PagerDuty, security ecosystem ISVs) ship Skills as marketplace artifacts. Revenue-share economics. **Ecosystem network effects** — every new Skill in the registry improves every customer's investigation. |
-
-### The Compounding Asset
-
-A standalone application generates linear value: one investigation, one customer, one outcome at a time. A platform compounds:
-
-- Every new Skill shipped to the registry improves **every** customer's investigation.
-- Every customer's labeled incident outcome feeds the fine-tuning corpus that improves the base Cisco Time Series Model and Large Language Model.
-- Every new Model Context Protocol tool added by any team becomes available to every agentic workflow.
-- The audit trail and Responsible AI governance applies uniformly — one trust posture, not 50 inconsistent ones.
-
-**This is the Splunk AI Foundations charter expressed as a product:** not building applications, but building the substrate other teams build applications on. Vigil is the working proof of concept.
-
----
-
 ## Competitive Position
 
 Full breakdown across 25+ vendors in [`docs/competitive-landscape.md`](./competitive-landscape.md). The market map:
@@ -436,6 +401,7 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
 | **Outcome KPI Dashboard** | Business-leader reporting on risk avoided, cost per correct decision, analyst effectiveness — replaces MTTR charts |
 | **Prevention Rate Tracking** | Track suppressed/investigated/escalated ratio as Pinecone memory grows — primary operational health signal |
 | **Live Forecasting Integration** | Wire Phase 4 forecast layer to live CTSM and Chronos endpoints (gated on Cisco quantile API — see [`model-evaluation.md`](./model-evaluation.md)) |
+| **Auto-Contributor** | Vigil autonomously scans CVE databases, competitor product capabilities, and unresolved incident patterns — proposes new detection rules, SPL patterns, and Skills directly to the engineering team. Architecture supports it today via the Phase 4 feedback loop + Phase 3 evaluator. |
 
 ---
 
@@ -507,6 +473,14 @@ The same MCP-guided workflow framing visualized — **one canonical engine, fork
 | **Human-in-loop policy** | Re-implemented per app, inconsistent across products | **One mechanism (FSM confidence-band routing) configured per team** — every approval decision auditable in the same JSON schema |
 
 **The platform pattern in one sentence:** Vigil is the **agentic equivalent of a Splunk dashboard** — one shared engine, customized per team, scaled by adding new MCP tools and approval policies, not by rewriting the agent every time a new use case shows up.
+
+### Three Adoption Tiers Built on the Same Engine
+
+| Audience | Consumption Model |
+|---|---|
+| **Internal Splunk + Cisco product teams** | Vigil's FSM + RAG + Evaluator consumed as internal libraries with MCP gateway for tool exposure. Each product team onboards in **1–2 weeks** versus 6–12 months building from scratch. |
+| **Customer deployments** | Hosted (Cisco / Splunk-managed) or self-hosted in customer Virtual Private Cloud with bring-your-own data plane. RBAC passthrough preserves the customer's security boundary. **Customer-specific incident memory grows in their Pinecone tenant over time — the proprietary corpus stays theirs.** |
+| **Developer + partner ecosystem** | Skill SDK + MCP-compliant tool registry + workflow template library + evaluator harness for measuring third-party Skills. Partners (ServiceNow, PagerDuty, security ecosystem ISVs) ship Skills as marketplace artifacts — **revenue-share economics, ecosystem network effects.** |
 
 ---
 
@@ -600,7 +574,7 @@ Cisco announced AgenticOps at Cisco Live 2025. Three components are on the roadm
 | Outcome-based metrics replacing MTTR — precision, suppression, cost per decision | ✅ Shipped |
 | Foundation-model forecasting layer (Cisco Time Series Model + Chronos) with three trigger types | ✅ Shipped (mock) |
 | Mean Time to Resolve: 47 min → 35s on Priority 2 incidents | ✅ Shipped |
-| Platform substrate model — five levers, three audience tiers, compounding ecosystem | ✅ Documented |
+| Platform substrate model — one workflow customized per team, three adoption tiers | ✅ Documented |
 | Comprehensive competitive landscape across five tiers / 25+ vendors | ✅ Documented |
 
 **The path forward:** when Cisco AI Canvas ships, Vigil's Finite State Machine workflows drop into it. When the Deep Network Model ships, the Large Language Model call swaps out. When Cisco Time Series Model v1.0 ships in early 2026, quantile outputs unlock the full confidence-routing layer. The architecture is built to **absorb Cisco's roadmap and the foundation-model ecosystem — not race them**.
