@@ -19,7 +19,7 @@ Every major JD responsibility maps to a shipped Vigil artifact:
 | *"Responsible AI & Governance"* | Splunk AI Governance Alignment table mapping all five Splunk principles to architecture. Pydantic JSON audit trail per investigation. |
 | *"Addressing financial goals (e.g., **cloud margin**)"* | Three cost levers — schema enforcement + prompt caching + Haiku tiering = **80–85% off unconstrained baseline. ~$620K/year saved at 10K alerts/day.** |
 | *"GTM & Ecosystem"* | `docs/competitive-landscape.md` — 5-tier market map, 25+ vendors, three defensible advantages, partnership posture vs Cisco roadmap. |
-| *"Customer Advocacy"* | Four Customer Problems framed entirely in **Splunk's own published 2025–2026 research** — 55% false positives, 81% manual investigation pain, etc. |
+| *"Customer Advocacy"* | Four Customer Problems framed entirely in **Splunk's own published 2025–2026 research** — 55% false positives, 81% manual investigation pain, 78% tool sprawl, reactive ops dead per Splunk 2026 predictions. |
 
 ---
 
@@ -37,16 +37,16 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 
 | # | Beat | Time | What to Show | JD Hook |
 |:-:|---|:-:|---|---|
-| 1 | Opening + One-Line Story | 1 min | PRD top | Sets up everything |
-| 2 | The Four Customer Problems | 1 min | PRD §2 | Customer Advocacy |
-| 3 | Why Now — Splunk leadership | 30 sec | PRD §3 | Industry timing |
+| 1 | Opening + One-Line Story | 1 min | PRD: *The One-Line Story* | Sets up everything |
+| 2 | The Four Customer Problems | 1 min | PRD: *The Four Customer Problems* | Customer Advocacy |
+| 3 | Why Now — Splunk leadership | 30 sec | PRD: *Why Now — Splunk's 2026 Direction* | Industry timing |
 | 4 | Model Evaluation (notebook) ⭐ | 3 min | `splunk_evals.ipynb` | **Develop Specialized Models** |
-| 5 | Platform Architecture + Live Run | 4 min | PRD §4–8 + UI | **Enable Agentic Workflows** + **Build Connectivity** |
-| 6 | Cost Discipline | 1.5 min | PRD §7 Phase 3 | **Financial Goals / Cloud Margin** |
-| 7 | Competitive Position | 1 min | PRD §10 | **GTM & Ecosystem** |
-| 8 | Vigil as Platform ⭐ | 2 min | PRD §14 | **Drive AI Platform Strategy** |
-| 9 | Cisco AI Canvas integration | 1 min | PRD §16 | Partnership story |
-| 10 | The Bottom Line — close | 30 sec | PRD §17 | Strategic close |
+| 5 | Platform Architecture + Live Run | 4 min | PRD: *The Platform — Four Phases* + UI | **Enable Agentic Workflows** + **Build Connectivity** |
+| 6 | Cost Discipline | 1.5 min | PRD: *Phase 3 Evaluator* + *Results & Outcomes* | **Financial Goals / Cloud Margin** |
+| 7 | Competitive Position | 1 min | PRD: *Competitive Position* | **GTM & Ecosystem** |
+| 8 | Vigil as Platform ⭐ | 2 min | PRD: *How Vigil Scales as a Platform* | **Drive AI Platform Strategy** |
+| 9 | Cisco AI Canvas integration | 1 min | PRD: *How Vigil Fits Cisco's AI Roadmap* | Partnership story |
+| 10 | The Bottom Line — close | 30 sec | PRD: *The Bottom Line* | Strategic close |
 
 ---
 
@@ -61,7 +61,7 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 
 > "Splunk's 2026 predictions explicitly say reactive operations are no longer enough — agentic AI is the path. Cisco's AgenticOps vision at Cisco Live 2025 says the same thing. Neither has shipped the application layer that fulfills that vision. I built a prototype of it."
 
-> "**Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop, grounded by domain-specific foundation models — Cisco Time Series Model for forecasting, Anthropic Claude for reasoning, OpenAI embeddings for retrieval.**"
+> "**Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop, grounded by domain-specific foundation models — Cisco Time Series Model for forecasting, a swappable foundation-model agent for reasoning (Claude today, Cisco Deep Network Model at GA), OpenAI embeddings for retrieval.**"
 
 > "Up-front honest framing: this is mock data and a single-engineer prototype. But every responsibility in the AI Foundations job description maps to something I've built and measured here. I'll walk you through it in 15 minutes."
 
@@ -74,7 +74,7 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 ### Beat 2 — The Four Customer Problems (1 min)
 
 **JD hook:** Customer Advocacy.
-**Show:** PRD section 2 "The Four Customer Problems — In Splunk's Own Words."
+**Show:** PRD section *"The Four Customer Problems — In Splunk's Own Words."*
 
 **Talk track:**
 
@@ -97,7 +97,7 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 ### Beat 3 — Why Now (30 sec)
 
 **JD hook:** Industry timing.
-**Show:** PRD section 3 — the 6-row "Why Now" table.
+**Show:** PRD section *"Why Now — Splunk's 2026 Direction"* — the 6-row table.
 
 **Talk track:**
 
@@ -150,11 +150,11 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 ### Beat 5 — Platform Architecture + Live Run (4 min)
 
 **JD hook:** *"Enable Agentic Workflows"* + *"Build Connectivity via MCP."*
-**Show:** PRD §4 Platform diagram first (30 sec), then switch to the running UI for the live run.
+**Show:** PRD section *"The Platform — Four Phases in One Loop"* (the architecture diagram) first (30 sec), then switch to the running UI for the live run.
 
 **Talk track — Part A: Architecture overview (45 sec):**
 
-*Show PRD §4 — the 4-phase platform diagram.*
+*Show the 4-phase platform diagram in the PRD.*
 
 > "Four phases, one loop. Alert comes in. **Phase 2.5 Pre-Triage** — rules-based, zero tokens, sub-millisecond — filters 35–40% of alerts before any model call. Surviving alerts go through **Phase 2 Finite State Machine investigation** — TRIAGE, INVESTIGATING, HYPOTHESIZING — grounded by Pinecone Retrieval-Augmented Generation."
 
@@ -199,7 +199,7 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 ### Beat 6 — Cost Discipline (1.5 min)
 
 **JD hook:** *"Addressing financial goals (e.g., cloud margin)."*
-**Show:** PRD §7 — Phase 3 Evaluator table (the precision/cost comparison) then jump to the Results & Outcomes table for the $620K row.
+**Show:** PRD *Phase 3 — Evaluator* table (the precision/cost comparison) then jump to the *Results & Outcomes* table for the $620K row.
 
 **Talk track:**
 
@@ -222,7 +222,7 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 ### Beat 7 — Competitive Position (1 min)
 
 **JD hook:** *"GTM & Ecosystem"* + *"strategic narratives for partners."*
-**Show:** PRD §10 — the market map quadrant.
+**Show:** PRD *Competitive Position* — the market map quadrant.
 
 **Talk track:**
 
@@ -243,7 +243,7 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 ### Beat 8 — Vigil as a Platform ⭐ (2 min)
 
 **JD hook:** *"Drive AI Platform Strategy"* + *"shipped as a world-class platform to our global customers and developer ecosystem."*
-**Show:** PRD §14 — "How Vigil Scales as a Platform" — start with the identity definition, then the **Orchestrator Pattern diagram**, then the team customization diagram.
+**Show:** PRD *"How Vigil Scales as a Platform — One Workflow, Customized Per Team"* — start with the identity definition, then the **Orchestrator Pattern diagram**, then the team customization diagram.
 
 **Talk track:**
 
@@ -276,7 +276,7 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 ### Beat 9 — Cisco AI Canvas Integration (1 min)
 
 **JD hook:** Partnership / GTM / strategic narratives.
-**Show:** PRD §16 — "How Vigil Fits Cisco's AI Roadmap" with the Canvas diagram.
+**Show:** PRD *"How Vigil Fits Cisco's AI Roadmap"* with the Canvas integration diagram.
 
 **Talk track:**
 
@@ -301,7 +301,7 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 ### Beat 10 — The Bottom Line (30 sec)
 
 **JD hook:** Closing pitch.
-**Show:** PRD §17 — "The Bottom Line" table.
+**Show:** PRD *"The Bottom Line"* table.
 
 **Talk track:**
 

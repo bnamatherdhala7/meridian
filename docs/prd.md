@@ -13,7 +13,7 @@
 
 Cisco and Splunk have both shipped Model Context Protocol servers with network operations tools. Neither has shipped the reasoning layer that connects them, sequences the queries, and makes the escalate-or-fix decision at 2am. Vigil is that layer — built, running, and measured. **The question Vigil answers is not how fast the investigation runs — it is whether the investigation needed to happen at all.**
 
-Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop, grounded by domain-specific foundation models — Cisco's Time Series Model for forecasting, Anthropic Claude for reasoning, OpenAI embeddings for retrieval.
+Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop, grounded by domain-specific foundation models — Cisco Time Series Model for forecasting, a **swappable foundation-model agent** for reasoning (Claude today, Cisco Deep Network Model at GA), OpenAI embeddings for retrieval.
 
 ---
 
@@ -370,7 +370,7 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
 | **Cisco AgenticOps** | Vigil's Finite State Machine registers as a Canvas Workflow Template; customers further fork inside Canvas | **Configurable per Canvas tenant** |
 | **Cisco Cloud Security** | Add step: "Cross-reference Cisco threat intelligence before ESCALATING" + auto-isolate on confirmed match | Autonomous on known-pattern threats; **human approval on novel signatures** |
 
-### The Orchestrator Pattern — Vigil MCP Sits Between Claude and Every Other MCP
+### The Orchestrator Pattern — Vigil MCP Sits Between the Foundation-Model Agent and Every Other MCP
 
 ```
                   ┌──────────────────────────────────────────────────────────┐
@@ -487,7 +487,7 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
 | **Effort to onboard a new team** | 6–12 months — each team builds their own agent stack from scratch | **1–2 weeks** — fork the canonical workflow, register new MCP tools, configure approval thresholds |
 | **Knowledge accumulation** | Each team's tooling lives in its own silo | **Every custom MCP tool / Skill flows back into the registry** — available to every other team's workflow |
 | **Governance posture** | 5 different audit formats, 5 different approval policies | **One audit format, one approval-policy abstraction** — configured per team via threshold values, not separate codebases |
-| **Foundation model improvements** | Each team independently updates their Large Language Model / forecast model | **Every Claude / Cisco Time Series Model / embedding-model release improves every team's workflow simultaneously** |
+| **Foundation model improvements** | Each team independently updates their Large Language Model / forecast model | **Every foundation-model release — Claude, Cisco Deep Network Model, Cisco Time Series Model, embedding models — improves every team's workflow simultaneously** |
 | **Cost** | Linear in team count | **Sublinear** — the substrate is shared, only the per-team customizations carry incremental cost |
 | **Human-in-loop policy** | Re-implemented per app, inconsistent across products | **One mechanism (FSM confidence-band routing) configured per team** — every approval decision auditable in the same JSON schema |
 
@@ -556,8 +556,8 @@ Cisco announced AgenticOps at Cisco Live 2025. Three components are on the roadm
        │   Announced Cisco Live 2025    │  │  Target 2026                        │
        │                                │  │                                     │
        │   ✓ Vigil's 2 new Catalyst    │  │  → Drop-in replacement for the      │
-       │     tools register here        │  │    Anthropic Claude call inside     │
-       │   ✓ Vigil consumes Splunk MCP  │  │    FSM reasoning states             │
+       │     tools register here        │  │    foundation-model agent call      │
+       │   ✓ Vigil consumes Splunk MCP  │  │    inside FSM reasoning states      │
        │     + Cisco Catalyst MCP via   │  │  → Schema enforcement preserves     │
        │     this registry              │  │    the 0.91 precision floor         │
        │                                │  │  → Cisco Time Series Model already  │
@@ -571,7 +571,7 @@ Cisco announced AgenticOps at Cisco Live 2025. Three components are on the roadm
 |---|---|---|
 | **AI Canvas** — agentic orchestration platform | Preview · target 2026 | Vigil's 7-state FSM is **the workflow that runs on Canvas**. The state transition graph maps directly to a Canvas template. When Canvas ships, Vigil ships as a Canvas template — **no rewrite, no migration cost.** |
 | **Skills Registry** — MCP tool catalog | Announced Cisco Live 2025 | Vigil registers `get_network_topology` and `get_telemetry_metrics` into the Skills Registry. Vigil's FSM consumes registry Skills as ordinary MCP tools. **Vigil is both consumer and contributor to the registry.** |
-| **Deep Network Model** — Cisco network-tuned LLM | Target early 2026 | Drop-in replacement for the Claude call inside FSM reasoning states. Schema-enforced JSON output stays the same — **the model behind the wall changes; the 0.91 precision floor is preserved by the constrained-mode prompt.** Cisco Time Series Model is already benchmarked and used in Phase 4. |
+| **Deep Network Model** — Cisco network-tuned LLM | Target early 2026 | Drop-in replacement for the foundation-model agent call inside FSM reasoning states. Schema-enforced JSON output stays the same — **the model behind the wall changes; the 0.91 precision floor is preserved by the constrained-mode prompt.** Cisco Time Series Model is already benchmarked and used in Phase 4. |
 
 **Why this matters for Cisco:** every Cisco AgenticOps customer who adopts AI Canvas needs an incident commander workflow to run on it. **Vigil is that workflow.** Cisco builds the platform — Vigil is the canonical first application, with measured precision, cost, and audit trail already proven.
 
