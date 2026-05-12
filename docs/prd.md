@@ -207,7 +207,25 @@ Feedback loop — labeled fine-tuning corpus for supervised CTSM fine-tuning
 | **Present** | Pre-triage + Splunk telemetry | What is happening now, is the alert credible |
 | **Future** | CTSM + Chronos forecast | What will happen — should the FSM run now |
 
-The war-room user interface ships a Forecast Strip rendering all three signals (Border Gateway Protocol route count, Central Processing Unit, packet drop) with shaded P10–P90 confidence band. Triggers colour-coded: orange for threshold breach (with `T−18min` countdown), amber for trajectory, violet for uncertainty, green for stable. The False Positive scenario stays all-green — visually disproving the alert before the Finite State Machine runs. Mock data today; live wiring is roughly one week of work, gated on Priority 0 in [`docs/model-evaluation.md`](./model-evaluation.md).
+**The three trigger types in practice:**
+
+| Trigger | When It Fires | Concrete Example |
+|---|---|---|
+| **THRESHOLD** | P50 forecast breaches a configured hard limit within the horizon | Border Gateway Protocol route count P50 drops below 700 (configured floor) in 18 minutes — Vigil fires the pre-alert and the FSM begins investigating **before the BGP session actually flaps** |
+| **TRAJECTORY** | P50 stays below the threshold but is on a clear deterioration path | Central Processing Unit climbs from 60% to 75% over the last hour; CTSM forecasts 78% in 110 minutes. No hard breach yet but the slope is anomalous — triggers a "watch" investigation |
+| **UNCERTAINTY** | P90 confidence band widens significantly — the model says "could be 50, could be 95" | CPU on a core device: P50 stays at 60% but P10–P90 widens from ±5% to ±25% in 30 minutes. **The widening uncertainty itself is the signal** — something is changing that the model can't pattern-match. No statistical-anomaly competitor has this trigger type. |
+
+**The feedback loop — every investigation becomes a labeled training example:**
+
+The FSM's final state (REMEDIATING / ESCALATING / SUPPRESSED) plus the forecast snapshot plus the actual outcome (resolved correctly, escalated to human, confirmed false positive) is precisely the labeled data CTSM fine-tuning requires.
+
+- 1,000 investigations per day → 1,000 labeled examples
+- Six months → ~180,000 examples covering the **specific anomaly signatures in this customer's environment**
+- Feed the corpus into continued pre-training of CTSM (Priority 3 in [`docs/model-evaluation.md`](./model-evaluation.md)) → **customer-specific CTSM that compounds month over month**
+
+This is the path from "third-party foundation model" to "proprietary asset that compounds." Base model stays 3p; the labeled corpus is 1p — and over time, that corpus is the moat.
+
+**War-room user interface:** Forecast Strip renders all three signals (Border Gateway Protocol route count, Central Processing Unit, packet drop) with shaded P10–P90 confidence band. Triggers colour-coded: orange for threshold breach (`T−18min` countdown), amber for trajectory, violet for uncertainty, green for stable. The False Positive scenario stays all-green — visually disproving the alert before the Finite State Machine runs. Mock data today; live wiring is roughly one week, gated on Priority 0 in [`docs/model-evaluation.md`](./model-evaluation.md).
 
 ---
 
@@ -233,19 +251,9 @@ The war-room user interface ships a Forecast Strip rendering all three signals (
 | Curated corpora (Splunk Processing Language patterns + incident memories) | Vetted network-domain knowledge | **1p** |
 | Evaluator (precision, recall, token cost, composite) | Deterministic scoring | **1p** |
 
-### Where We Buy, Where We Build
+> **A model alone is a chatbot. Rules alone are a runbook.** Vigil **buys** foundation models (everything that needs pattern recognition — text reasoning, time-series forecasting, retrieval embeddings). Vigil **builds** the network-domain logic — FSM, threshold rules, pre-triage, curated corpora, evaluator, schema enforcement, the two new Cisco Catalyst tools. Every model release improves Vigil for free; the network-domain logic is the differentiator.
 
-> **A model alone is a chatbot. Rules alone are a runbook.**
-
-**Buy (3p):** Foundation models for everything that needs pattern recognition — text reasoning, time-series forecasting, retrieval embeddings. Renting frontier capability is the only sensible choice; Anthropic, OpenAI, and Cisco's foundation-model team ship faster than any in-house effort could match. **Every model release improves Vigil for free.**
-
-**Build (1p):** Network-domain logic — the Finite State Machine, threshold rules, pre-triage logic, curated corpora, evaluator, schema enforcement, trigger evaluation, the two new Cisco Catalyst tools. This is what makes Vigil's investigation different from a generic Large Language Model with tools.
-
-**The proprietary asset over time:** The Phase 4 feedback loop converts every investigation into a labeled forecast-vs-outcome record. That corpus feeds customer-specific fine-tuning of Cisco Time Series Model (Priority 3 in [`docs/model-evaluation.md`](./model-evaluation.md)). **Base models stay 3p; the fine-tuning corpus is 1p — and over time, that corpus is the moat.**
-
-### Why Pre-Triage Is Rules, Not a Model
-
-The single most-asked architectural question. **Pre-triage is logical filtering, not pattern recognition.** The decision it answers — *"did three corroborating signals fire, or just one repeating one?"* — is explicit if-then logic. A foundation model's edge is finding patterns humans cannot articulate; here the patterns are already articulated. A model would be the wrong tool. Auditability (every decision cites the rule that fired) and sub-millisecond latency are supporting reasons. **Deliberately chosen.**
+**Why pre-triage is rules, not a model:** Pre-triage is *logical filtering, not pattern recognition*. The decision ("did three corroborating signals fire, or just one repeating one?") is explicit if-then logic. Applying a model where the patterns are already articulable is the wrong tool. Auditability and sub-millisecond latency are supporting reasons. **Deliberately chosen.**
 
 ---
 
@@ -413,13 +421,7 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
 
 ## Known Limitations
 
-| Limitation | Why It's OK |
-|---|---|
-| FSM handles known patterns; novel scenarios escalate | Designed intentionally — escalation is the correct response to ambiguity on live infrastructure |
-| Constrained mode is schema enforcement, not a trained model | Prompt engineering is the actual lever — defensible claim without fine-tuning |
-| Mock data for Splunk + Cisco Catalyst endpoints in demo | Architecture is production-ready; data is demo-scale by design |
-| Pinecone incident memory starts at 30 records | Continuous memory roadmap item grows this customer-specifically over 6+ months |
-| Phase 4 forecasting uses pre-computed fixtures | Architecture real and shippable; live wiring gated on Cisco quantile API |
+**Honest framing for the demo:** Mock data for Splunk + Cisco Catalyst endpoints (architecture is production-ready, data is demo-scale by design). Pinecone incident memory seeded at 30 records (grows customer-specifically via the Continuous Incident Memory roadmap item). Phase 4 forecasting uses pre-computed fixtures (live wiring is roughly one week, gated on Priority 0 in [`docs/model-evaluation.md`](./model-evaluation.md)). FSM handles known incident patterns; novel scenarios always escalate to a human — **that is the design, not a limitation.**
 
 ---
 
@@ -439,6 +441,63 @@ The metrics that prove the platform works — measured across the four reference
 | Mean Time to Detect (Priority 2) ¹ | 15 minutes | 8 seconds | 98.7% faster |
 
 *¹ Apply only to the 60–65% of incidents that reach investigation. 35–40% are suppressed at 0 tokens before any model call. Per [Splunk Security Predictions 2026](https://www.splunk.com/en_us/blog/leadership/security-predictions-2026-what-agentic-ai-means-for-the-people-running-the-soc.html): MTTR is a downstream snapshot, not the primary KPI.*
+
+---
+
+## How Vigil Fits Cisco's AI Roadmap
+
+Cisco announced AgenticOps at Cisco Live 2025. Three components are on the roadmap; **Vigil is the application layer that brings them together today and absorbs them as they ship**.
+
+```
+                  ┌─────────────────────────────────────────────────────────┐
+                  │                  CISCO AI CANVAS                          │
+                  │       (Cisco's agentic workflow platform — 2026)          │
+                  │       Drag-and-drop orchestration · Generative UI         │
+                  │  ┌──────────────────────────────────────────────────┐    │
+                  │  │  Vigil's Finite State Machine =                  │    │
+                  │  │     a canonical Canvas workflow template          │    │
+                  │  └────────────────────┬─────────────────────────────┘    │
+                  └────────────────────────┼──────────────────────────────────┘
+                                           │ orchestrates
+                                           ▼
+            ┌──────────────────────────────────────────────────────────────┐
+            │       VIGIL'S 7-STATE FSM WORKFLOW (shipped today)            │
+            │                                                                │
+            │   Pre-Triage → TRIAGE → INVESTIGATING → HYPOTHESIZING          │
+            │       │                                       │                │
+            │       └→ SUPPRESSED      REMEDIATING / ESCALATING               │
+            │                                                                │
+            │   Forecast Pre-Alert overlays above (Phase 4)                   │
+            │   Pinecone RAG grounds every step (past + present)              │
+            └────┬─────────────────────────────┬───────────────────────────────┘
+                 │ calls                       │ swap-in candidate
+                 ▼                             ▼
+       ┌──────────────────────────────┐  ┌──────────────────────────────────┐
+       │   CISCO SKILLS REGISTRY       │  │  CISCO DEEP NETWORK MODEL          │
+       │   (MCP tool catalog)           │  │  (Cisco-trained network FM)        │
+       │   Announced Cisco Live 2025    │  │  Target 2026                        │
+       │                                │  │                                     │
+       │   ✓ Vigil's 2 new Catalyst    │  │  → Drop-in replacement for the      │
+       │     tools register here        │  │    Anthropic Claude call inside     │
+       │   ✓ Vigil consumes Splunk MCP  │  │    FSM reasoning states             │
+       │     + Cisco Catalyst MCP via   │  │  → Schema enforcement preserves     │
+       │     this registry              │  │    the 0.91 precision floor         │
+       │                                │  │  → Cisco Time Series Model already  │
+       │                                │  │    benchmarked + used in Phase 4    │
+       └──────────────────────────────┘  └──────────────────────────────────┘
+```
+
+### Three Integration Points
+
+| Cisco Component | Status | How Vigil Plugs In |
+|---|---|---|
+| **AI Canvas** — agentic orchestration platform | Preview · target 2026 | Vigil's 7-state FSM is **the workflow that runs on Canvas**. The state transition graph maps directly to a Canvas template. When Canvas ships, Vigil ships as a Canvas template — **no rewrite, no migration cost.** |
+| **Skills Registry** — MCP tool catalog | Announced Cisco Live 2025 | Vigil registers `get_network_topology` and `get_telemetry_metrics` into the Skills Registry. Vigil's FSM consumes registry Skills as ordinary MCP tools. **Vigil is both consumer and contributor to the registry.** |
+| **Deep Network Model** — Cisco network-tuned LLM | Target early 2026 | Drop-in replacement for the Claude call inside FSM reasoning states. Schema-enforced JSON output stays the same — **the model behind the wall changes; the 0.91 precision floor is preserved by the constrained-mode prompt.** Cisco Time Series Model is already benchmarked and used in Phase 4. |
+
+**Why this matters for Cisco:** every Cisco AgenticOps customer who adopts AI Canvas needs an incident commander workflow to run on it. **Vigil is that workflow.** Cisco builds the platform — Vigil is the canonical first application, with measured precision, cost, and audit trail already proven.
+
+**Why this matters for Splunk:** every Splunk customer who runs Cisco AgenticOps needs the Splunk telemetry inside the agent's investigation loop. **Vigil is that loop.** Splunk MCP server + Cisco Catalyst MCP server in one workflow — the integration nobody has shipped, demonstrated and measured today.
 
 ---
 
