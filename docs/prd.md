@@ -374,8 +374,14 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
 
 ```
                   ┌──────────────────────────────────────────────────────────┐
-                  │              CLAUDE (the AI agent)                         │
-                  │   Receives alert · executes tools · generates report       │
+                  │            FOUNDATION-MODEL AGENT                          │
+                  │   (model-agnostic — swappable at deployment time)          │
+                  │                                                            │
+                  │   • Cisco Deep Network Model — target early 2026           │
+                  │   • Anthropic Claude — today (Sonnet 4.6 / Haiku 4.5)     │
+                  │   • Any capable Large Language Model — schema enforced    │
+                  │                                                            │
+                  │   Receives alert · executes MCP tools · generates report  │
                   └──────────────────────────┬───────────────────────────────┘
                                              │ alert + investigation intent
                                              ▼
@@ -424,7 +430,7 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
    └────────────────────────┘  └────────────────────────┘  └────────────────────────┘  └────────────────────────┘
 ```
 
-**The key insight:** The Vigil MCP **does not call** Splunk MCP or Cisco Catalyst MCP — **Claude does**. Vigil's manifest tells Claude *which tools to call, in what Finite State Machine order, with what approval thresholds, and how to record the audit trail.* Claude holds all the MCP connections in a single session and sequences them through Vigil's manifest. **You can add any MCP to Claude (or to a Cisco AgenticOps Canvas tenant) and reference its tools from Vigil's manifest — that is how the platform scales.**
+**The key insight:** The Vigil MCP **does not call** Splunk MCP or Cisco Catalyst MCP — **the foundation-model agent does**. Vigil's manifest tells the agent *which tools to call, in what Finite State Machine order, with what approval thresholds, and how to record the audit trail.* The agent (Claude today, Cisco Deep Network Model when it ships, any capable Large Language Model under the hood) holds all the MCP connections in a single session and sequences them through Vigil's manifest. **You can add any MCP to the agent's connector list — Claude.ai, a Cisco AgenticOps Canvas tenant, or a self-hosted Anthropic SDK deployment — and reference its tools from Vigil's manifest. That is how the platform scales, and that is why the platform is not locked to any one model vendor.**
 
 ### The Pattern Visualized — One Canonical Engine, Forked Per Team
 

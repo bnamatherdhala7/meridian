@@ -251,11 +251,13 @@ That sentence does three things at once: (1) names the gap, (2) signals you've d
 
 > "The identity in one sentence: **Vigil is an MCP-guided workflow. Customizable, auditable, human-in-the-loop. Each team forks the default workflow, adds their own steps, and configures their own confidence thresholds — autonomous on routine cases, human approval on novel or high-risk.**"
 
-*Show the **Orchestrator Pattern diagram** (Claude → Vigil MCP → Splunk MCP + Cisco Catalyst MCP + any other MCP).*
+*Show the **Orchestrator Pattern diagram** (Foundation-model agent → Vigil MCP → Splunk MCP + Cisco Catalyst MCP + any other MCP).*
 
-> "Here's the technical pattern. **Claude — the AI agent — sits at the top.** It receives the alert and executes tools. **Vigil MCP sits in the middle as the orchestrator.** Vigil's manifest defines the Finite State Machine transitions, RAG retrieval triggers, forecast confidence bands, audit schema, approval thresholds. **At the bottom are the downstream MCPs** — Splunk MCP with its 14 tools, Cisco Catalyst MCP with the two new Vigil-contributed tools, and any other MCP a team adds — ServiceNow, PagerDuty, Slack, GLaaS."
+> "Here's the technical pattern. **At the top is the foundation-model agent — and this is deliberately model-agnostic.** Today the implementation runs on Anthropic Claude. **When Cisco Deep Network Model ships in early 2026, that drops in as the foundation-model agent.** Any capable Large Language Model works as long as schema enforcement is in place. **That swappability is what makes this a platform, not a Claude application.**"
 
-> "**The key insight that makes this scale:** Vigil MCP doesn't call Splunk MCP — Claude does. The manifest tells Claude which tools to call, in what order, with what approval thresholds. You can add any MCP to Claude.ai or any Cisco AgenticOps Canvas tenant and reference its tools from Vigil's manifest. **That is how the platform scales — by adding tools to the catalog, not by rewriting Vigil.**"
+> "**Vigil MCP sits in the middle as the orchestrator.** Vigil's manifest defines the Finite State Machine transitions, RAG retrieval triggers, forecast confidence bands, audit schema, approval thresholds. **At the bottom are the downstream MCPs** — Splunk MCP with its 14 tools, Cisco Catalyst MCP with the two new Vigil-contributed tools, and any other MCP a team adds — ServiceNow, PagerDuty, Slack, GLaaS."
+
+> "**The key insight that makes this scale:** Vigil MCP doesn't call Splunk MCP — the foundation-model agent does. **And that agent is swappable.** Today it's Claude. When Cisco Deep Network Model ships, it drops in. Any capable Large Language Model works under the hood. The manifest tells whichever agent is running which tools to call, in what order, with what approval thresholds. You can add any MCP to the agent's connector list and reference its tools from Vigil's manifest. **That is how the platform scales — by adding tools to the catalog, not by rewriting Vigil. And the platform is not locked to any one model vendor.**"
 
 *Now show the team customization diagram — canonical workflow at top, three team forks in the middle, MCP registry at the bottom.*
 
