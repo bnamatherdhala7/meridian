@@ -17,7 +17,37 @@ Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalys
 
 ---
 
-## The Five Customer Problems — In Splunk's Own Words
+## What Vigil IS — One Clear Answer
+
+**Vigil is a workflow.** Specifically: a 7-state Finite State Machine that orchestrates Splunk MCP and Cisco Catalyst MCP tool calls, grounded by Retrieval-Augmented Generation and foundation models, evaluated by a built-in scoring framework, and surfaced in a war-room user interface.
+
+### Disambiguating the Terminology
+
+The question every reviewer asks first: *is Vigil a Skill? An MCP tool? An MCP workflow? A platform?* The answer is **all of the above, in different framings of the same underlying asset**.
+
+| Term | What Vigil Is in That Frame |
+|---|---|
+| **MCP Tool** *(function exposed by an MCP server)* | Vigil **consumes** 4 Splunk MCP tools + the Cisco Catalyst MCP tools. Vigil **contributes** 2 new Cisco Catalyst tools (`get_network_topology`, `get_telemetry_metrics`) that exist in neither vendor's current Model Context Protocol server. |
+| **Cisco Skill** *(MCP-callable function in Cisco's Skills Registry)* | Vigil's 2 new Cisco Catalyst tools register as Skills in the registry. Vigil also consumes other Skills from the registry inside its FSM. |
+| **Cisco AI Canvas Workflow Template** *(a sequence of Skill calls orchestrated by Canvas)* | **Vigil's 7-state Finite State Machine IS the Workflow Template.** When AI Canvas ships in 2026, Vigil's transition graph runs as a Canvas workflow — no rewrite. |
+| **Splunk Agent** *(an agentic component invoked by Splunk applications)* | Vigil is the agentic incident commander that Splunk Security Operations, Splunk Observability, and Splunk IT Service Intelligence call via API to run autonomous investigations. |
+| **Platform substrate** *(reusable libraries other product teams build on)* | The Finite State Machine + Retrieval-Augmented Generation + Evaluator + audit-trail layers are reusable. Internal Splunk and Cisco product teams build domain-specific agents on Vigil's substrate without rebuilding the agentic stack from scratch. |
+
+### How Internal Teams Use Vigil
+
+| Team | How They Call Vigil | What They Build on Top |
+|---|---|---|
+| **Splunk Security Operations** | Pipe alerts from Splunk Enterprise Security to Vigil's API | Autonomous Tier 1 triage; analysts review only Vigil's escalations |
+| **Splunk Observability** | Wire Vigil's Phase 4 forecasting layer into Observability Cloud | Predictive SLO violation alerts before they fire |
+| **Splunk IT Service Intelligence** | Use Vigil's Finite State Machine to orchestrate service-health investigations | Autonomous service degradation triage with audit trail |
+| **Cisco AgenticOps** | Run Vigil's Finite State Machine as a Canvas Workflow Template | First canonical incident-commander workflow on AI Canvas |
+| **Cisco Cloud Security** | Call Vigil's API for autonomous threat investigation | Triage of high-volume security alerts grounded by Cisco threat intelligence |
+
+**Single-sentence frame:** Vigil is **a workflow application today**, **a Cisco AI Canvas Workflow Template at AI Canvas GA**, and **a reusable agentic substrate** that internal Splunk and Cisco product teams build on. **Same code, three positioning narratives, one underlying asset.**
+
+---
+
+## The Four Customer Problems — In Splunk's Own Words
 
 These are not generic industry pains. Each problem statement is grounded in Splunk's own published research and 2025–2026 leadership posts. Vigil's design directly answers each one.
 
@@ -54,14 +84,6 @@ These are not generic industry pains. Each problem statement is grounded in Splu
 > — Kamal Hathi, SVP & GM, Splunk · [*MachineGPT, Agentic AI*](https://www.splunk.com/en_us/blog/leadership/machinegpt-agentic-ai-and-the-new-foundation-for-digital-resilience.html)
 
 **Vigil's answer:** Phase 4 Proactive Forecasting Layer — Cisco Time Series Model + Chronos run continuously on Splunk telemetry, **forecasting up to 10 hours ahead**. Three trigger types fire **before** the alerting system would have. The only product combining foundation-model forecasting with agentic investigation.
-
-### 5. Decisions at Machine Scale Without an Audit Trail Is an Organizational Risk
-
-- **73% of observability teams report outages caused by ignored or suppressed alerts.** *([Patrick Lin, State of Observability 2025](https://www.splunk.com/en_us/blog/observability/state-of-observability-2025.html))*
-- **65% of CISOs sense burnout in their employees.** *([Splunk CISO Report](https://www.splunk.com/en_us/campaigns/ciso-report.html))*
-- *"Agentic audit trails are mandatory — agents are digital identities requiring least-privilege access and explainable decision logs."* *(Splunk Security Predictions 2026)*
-
-**Vigil's answer:** **Pydantic-validated JSON report on every investigation** — FSM transition log, tool call trace, RAG retrieval log, forecast snapshot, confidence score, evidence. **No alert silently ignored.** Sarbanes-Oxley + SOC 2 usable.
 
 ---
 
