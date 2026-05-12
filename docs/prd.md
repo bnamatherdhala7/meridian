@@ -19,31 +19,29 @@ Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalys
 
 ## What Vigil IS — One Clear Answer
 
-**Vigil is a workflow.** Specifically: a 7-state Finite State Machine that orchestrates Splunk MCP and Cisco Catalyst MCP tool calls, grounded by Retrieval-Augmented Generation and foundation models, evaluated by a built-in scoring framework, and surfaced in a war-room user interface.
+**Vigil is an MCP-guided workflow.** A customizable, auditable, human-in-loop investigation playbook that runs on top of Splunk MCP and Cisco Catalyst MCP servers. Each team forks the default workflow, adds their own steps, and configures their own confidence thresholds — **autonomous on routine cases, human-in-loop approval on novel or high-risk cases**.
 
-### Disambiguating the Terminology
+### Five Dimensions of That One Identity
 
-The question every reviewer asks first: *is Vigil a Skill? An MCP tool? An MCP workflow? A platform?* The answer is **all of the above, in different framings of the same underlying asset**.
-
-| Term | What Vigil Is in That Frame |
+| Dimension | What It Means in Vigil |
 |---|---|
-| **MCP Tool** *(function exposed by an MCP server)* | Vigil **consumes** 4 Splunk MCP tools + the Cisco Catalyst MCP tools. Vigil **contributes** 2 new Cisco Catalyst tools (`get_network_topology`, `get_telemetry_metrics`) that exist in neither vendor's current Model Context Protocol server. |
-| **Cisco Skill** *(MCP-callable function in Cisco's Skills Registry)* | Vigil's 2 new Cisco Catalyst tools register as Skills in the registry. Vigil also consumes other Skills from the registry inside its FSM. |
-| **Cisco AI Canvas Workflow Template** *(a sequence of Skill calls orchestrated by Canvas)* | **Vigil's 7-state Finite State Machine IS the Workflow Template.** When AI Canvas ships in 2026, Vigil's transition graph runs as a Canvas workflow — no rewrite. |
-| **Splunk Agent** *(an agentic component invoked by Splunk applications)* | Vigil is the agentic incident commander that Splunk Security Operations, Splunk Observability, and Splunk IT Service Intelligence call via API to run autonomous investigations. |
-| **Platform substrate** *(reusable libraries other product teams build on)* | The Finite State Machine + Retrieval-Augmented Generation + Evaluator + audit-trail layers are reusable. Internal Splunk and Cisco product teams build domain-specific agents on Vigil's substrate without rebuilding the agentic stack from scratch. |
+| **MCP-guided** | Vigil reads MCP tool catalogs (Splunk + Cisco Catalyst) and orchestrates calls dynamically. MCP is the only integration contract. **New tools added to the catalog become callable in the workflow automatically — no application code changes.** |
+| **Workflow** | A 7-state Finite State Machine with explicit, auditable transitions. Not a free-form agent. Defined in code today, forkable as a markdown / YAML template per team in the v2 Skill Editor. |
+| **Customizable per team** | Each team forks the default `TRIAGE → INVESTIGATING → HYPOTHESIZING → REMEDIATING / ESCALATING` path and adds their own steps — "Post to Slack," "Open a Jira ticket," "Trigger a ServiceNow change request" — without writing application code. Custom steps register as MCP tools. |
+| **Human-in-loop approvals** | The Finite State Machine routes by confidence band. **High confidence (≥ 0.90) → autonomous remediation.** **Low confidence → human approval gate before any action.** Each team configures their own threshold; the policy lives in the workflow, not in the operator. |
+| **Auditable** | Every investigation produces a Pydantic-validated JSON report — FSM transitions, tool calls, Retrieval-Augmented Generation retrievals, forecast snapshot, confidence score, evidence. Sarbanes-Oxley + SOC 2 ready. |
 
-### How Internal Teams Use Vigil
+### How Teams Customize the Same Underlying Workflow
 
-| Team | How They Call Vigil | What They Build on Top |
+| Team | Customization on Top of Default Vigil | Approval Threshold |
 |---|---|---|
-| **Splunk Security Operations** | Pipe alerts from Splunk Enterprise Security to Vigil's API | Autonomous Tier 1 triage; analysts review only Vigil's escalations |
-| **Splunk Observability** | Wire Vigil's Phase 4 forecasting layer into Observability Cloud | Predictive SLO violation alerts before they fire |
-| **Splunk IT Service Intelligence** | Use Vigil's Finite State Machine to orchestrate service-health investigations | Autonomous service degradation triage with audit trail |
-| **Cisco AgenticOps** | Run Vigil's Finite State Machine as a Canvas Workflow Template | First canonical incident-commander workflow on AI Canvas |
-| **Cisco Cloud Security** | Call Vigil's API for autonomous threat investigation | Triage of high-volume security alerts grounded by Cisco threat intelligence |
+| **Splunk Security Operations** | Add step: "Open ServiceNow ticket on ESCALATING" + Cisco threat-intel lookup before remediation | Autonomous suppress / remediate; **human approval on every ESCALATING** |
+| **Splunk Observability** | Wire Phase 4 forecast as the alert trigger + new step "Post predictive SLO violation to Slack" | Autonomous suppress; **analyst approval before public status-page update** |
+| **Splunk IT Service Intelligence** | Add step: "Trigger PagerDuty on high-blast-radius escalation" + service-dependency walk | Autonomous for L3 incidents; **human approval for L1 / L2** |
+| **Cisco AgenticOps** | Vigil's Finite State Machine registers as a Canvas Workflow Template; customers further fork inside Canvas | **Configurable per Canvas tenant** |
+| **Cisco Cloud Security** | Add step: "Cross-reference Cisco threat intelligence before ESCALATING" + auto-isolate on confirmed match | Autonomous on known-pattern threats; **human approval on novel signatures** |
 
-**Single-sentence frame:** Vigil is **a workflow application today**, **a Cisco AI Canvas Workflow Template at AI Canvas GA**, and **a reusable agentic substrate** that internal Splunk and Cisco product teams build on. **Same code, three positioning narratives, one underlying asset.**
+**Why this scales:** every new team adopts the same MCP-guided workflow engine. They differ only in the **Skills they call** and the **approval thresholds they configure**. No team rebuilds the agentic stack. **Vigil is the canonical MCP-guided investigation workflow — one shared engine, customized per team, scaled by adding new MCP tools and approval policies, not by rewriting the agent.**
 
 ---
 
@@ -444,6 +442,71 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
 ## Known Limitations
 
 **Honest framing for the demo:** Mock data for Splunk + Cisco Catalyst endpoints (architecture is production-ready, data is demo-scale by design). Pinecone incident memory seeded at 30 records (grows customer-specifically via the Continuous Incident Memory roadmap item). Phase 4 forecasting uses pre-computed fixtures (live wiring is roughly one week, gated on Priority 0 in [`docs/model-evaluation.md`](./model-evaluation.md)). FSM handles known incident patterns; novel scenarios always escalate to a human — **that is the design, not a limitation.**
+
+---
+
+## How Vigil Scales as a Platform — One Workflow, Customized Per Team
+
+The same MCP-guided workflow framing visualized — **one canonical engine, forked and customized per team, scaled by adding MCP tools and approval thresholds**, not by rewriting the agent.
+
+```
+                  ┌──────────────────────────────────────────────────┐
+                  │            CANONICAL VIGIL WORKFLOW                │
+                  │       (MCP-guided FSM shipped today)               │
+                  │                                                     │
+                  │    Pre-Triage → TRIAGE → INVESTIGATING              │
+                  │         → HYPOTHESIZING → REMEDIATING / ESCALATING  │
+                  │                                                     │
+                  │    + Phase 4 forecast pre-alert                     │
+                  │    + Pinecone Retrieval-Augmented Generation        │
+                  │    + Confidence-band human-in-loop routing          │
+                  │    + Pydantic JSON audit trail per investigation    │
+                  └─────────────────────┬────────────────────────────┘
+                                        │  fork + customize
+        ┌───────────────────────────────┼───────────────────────────────┐
+        ▼                               ▼                               ▼
+┌──────────────────┐           ┌──────────────────┐           ┌──────────────────┐
+│  Splunk Security  │           │ Splunk           │           │  Cisco            │
+│  Operations       │           │ Observability    │           │  AgenticOps       │
+│                   │           │                  │           │                   │
+│  + ServiceNow     │           │ + Phase 4 SLO    │           │  + Canvas tenant  │
+│    ticket step    │           │   forecast as    │           │    configuration  │
+│  + Cisco threat   │           │   alert source   │           │  + Customer-      │
+│    intel lookup   │           │ + Slack alert    │           │    specific fork  │
+│                   │           │   on prediction  │           │                   │
+│  APPROVAL:        │           │ APPROVAL:        │           │  APPROVAL:        │
+│  Human required   │           │ Analyst before   │           │  Per-tenant       │
+│  on every         │           │ status-page      │           │  configuration    │
+│  ESCALATING       │           │ publication      │           │                   │
+└─────────┬────────┘           └─────────┬────────┘           └─────────┬────────┘
+          │                              │                              │
+          └──────────────────────────────┼──────────────────────────────┘
+                                         ▼
+                  ┌────────────────────────────────────────────────────┐
+                  │   EVERY CUSTOM STEP = A NEW MCP TOOL OR SKILL       │
+                  │                                                      │
+                  │   Registered in Cisco Skills Registry                │
+                  │   Available to every other team's workflow           │
+                  │   Audit trail records every approval decision        │
+                  │                                                      │
+                  │   → New Splunk SecOps tool → Splunk Obs. can use it  │
+                  │   → New Cisco Cloud Security skill → AgenticOps too  │
+                  │   → Every team contributes; every team benefits      │
+                  └────────────────────────────────────────────────────┘
+```
+
+### Why This Architecture Scales
+
+| Dimension | Linear Approach (1 App per Team) | Vigil's Approach (1 Workflow, Customized) |
+|---|---|---|
+| **Effort to onboard a new team** | 6–12 months — each team builds their own agent stack from scratch | **1–2 weeks** — fork the canonical workflow, register new MCP tools, configure approval thresholds |
+| **Knowledge accumulation** | Each team's tooling lives in its own silo | **Every custom MCP tool / Skill flows back into the registry** — available to every other team's workflow |
+| **Governance posture** | 5 different audit formats, 5 different approval policies | **One audit format, one approval-policy abstraction** — configured per team via threshold values, not separate codebases |
+| **Foundation model improvements** | Each team independently updates their Large Language Model / forecast model | **Every Claude / Cisco Time Series Model / embedding-model release improves every team's workflow simultaneously** |
+| **Cost** | Linear in team count | **Sublinear** — the substrate is shared, only the per-team customizations carry incremental cost |
+| **Human-in-loop policy** | Re-implemented per app, inconsistent across products | **One mechanism (FSM confidence-band routing) configured per team** — every approval decision auditable in the same JSON schema |
+
+**The platform pattern in one sentence:** Vigil is the **agentic equivalent of a Splunk dashboard** — one shared engine, customized per team, scaled by adding new MCP tools and approval policies, not by rewriting the agent every time a new use case shows up.
 
 ---
 
