@@ -17,34 +17,6 @@ Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalys
 
 ---
 
-## What Vigil IS — One Clear Answer
-
-**Vigil is an MCP-guided workflow.** A customizable, auditable, human-in-loop investigation playbook that runs on top of Splunk MCP and Cisco Catalyst MCP servers. Each team forks the default workflow, adds their own steps, and configures their own confidence thresholds — **autonomous on routine cases, human-in-loop approval on novel or high-risk cases**.
-
-### Five Dimensions of That One Identity
-
-| Dimension | What It Means in Vigil |
-|---|---|
-| **MCP-guided** | Vigil reads MCP tool catalogs (Splunk + Cisco Catalyst) and orchestrates calls dynamically. MCP is the only integration contract. **New tools added to the catalog become callable in the workflow automatically — no application code changes.** |
-| **Workflow** | A 7-state Finite State Machine with explicit, auditable transitions. Not a free-form agent. Defined in code today, forkable as a markdown / YAML template per team in the v2 Skill Editor. |
-| **Customizable per team** | Each team forks the default `TRIAGE → INVESTIGATING → HYPOTHESIZING → REMEDIATING / ESCALATING` path and adds their own steps — "Post to Slack," "Open a Jira ticket," "Trigger a ServiceNow change request" — without writing application code. Custom steps register as MCP tools. |
-| **Human-in-loop approvals** | The Finite State Machine routes by confidence band. **High confidence (≥ 0.90) → autonomous remediation.** **Low confidence → human approval gate before any action.** Each team configures their own threshold; the policy lives in the workflow, not in the operator. |
-| **Auditable** | Every investigation produces a Pydantic-validated JSON report — FSM transitions, tool calls, Retrieval-Augmented Generation retrievals, forecast snapshot, confidence score, evidence. Sarbanes-Oxley + SOC 2 ready. |
-
-### How Teams Customize the Same Underlying Workflow
-
-| Team | Customization on Top of Default Vigil | Approval Threshold |
-|---|---|---|
-| **Splunk Security Operations** | Add step: "Open ServiceNow ticket on ESCALATING" + Cisco threat-intel lookup before remediation | Autonomous suppress / remediate; **human approval on every ESCALATING** |
-| **Splunk Observability** | Wire Phase 4 forecast as the alert trigger + new step "Post predictive SLO violation to Slack" | Autonomous suppress; **analyst approval before public status-page update** |
-| **Splunk IT Service Intelligence** | Add step: "Trigger PagerDuty on high-blast-radius escalation" + service-dependency walk | Autonomous for L3 incidents; **human approval for L1 / L2** |
-| **Cisco AgenticOps** | Vigil's Finite State Machine registers as a Canvas Workflow Template; customers further fork inside Canvas | **Configurable per Canvas tenant** |
-| **Cisco Cloud Security** | Add step: "Cross-reference Cisco threat intelligence before ESCALATING" + auto-isolate on confirmed match | Autonomous on known-pattern threats; **human approval on novel signatures** |
-
-**Why this scales:** every new team adopts the same MCP-guided workflow engine. They differ only in the **Skills they call** and the **approval thresholds they configure**. No team rebuilds the agentic stack. **Vigil is the canonical MCP-guided investigation workflow — one shared engine, customized per team, scaled by adding new MCP tools and approval policies, not by rewriting the agent.**
-
----
-
 ## The Four Customer Problems — In Splunk's Own Words
 
 These are not generic industry pains. Each problem statement is grounded in Splunk's own published research and 2025–2026 leadership posts. Vigil's design directly answers each one.
@@ -249,34 +221,6 @@ This is the path from "third-party foundation model" to "proprietary asset that 
 
 ---
 
-## What's Doing the Work — Production Architecture
-
-**The principle:** Vigil **buys foundation models (3p)** and **builds network-domain logic (1p)**. No classical machine learning anywhere — every "smart" component is a transformer-based foundation model. Everything safety-critical is deterministic rules.
-
-> Cisco Time Series Model and Chronos are **time-series language models** — same transformer architecture as Large Language Models, just trained on time-series tokens instead of text. The boundary between "LLM" and "time-series foundation model" is the training data, not the architecture. *(Sources: [Chronos paper, Amazon](https://arxiv.org/abs/2403.07815); [TimesFM blog, Google Research](https://research.google/blog/a-decoder-only-foundation-model-for-time-series-forecasting/))*
-
-### What Production Runs
-
-| Layer | Production Component | 1p / 3p |
-|---|---|---|
-| Reasoning inside FSM states | Anthropic Claude + schema-enforced JSON output | **3p** model · **1p** schema enforcement (the 0.91 precision lever) |
-| Time-series forecasting | **Cisco Time Series Model** (500M, decoder-only transformer, open-weights, self-hosted on customer GPU) + **Chronos-T5-Small** (46M, open-weights) | **3p** |
-| Retrieval embeddings | OpenAI `text-embedding-3-small` *(or BGE-M3 self-hosted for data sovereignty)* | **3p** |
-| Vector database | Pinecone *(or Qdrant self-hosted)* | **3p** |
-| MCP servers + 2 new Cisco Catalyst tools | Splunk MCP + Cisco Catalyst MCP + Vigil's `get_network_topology` and `get_telemetry_metrics` | **3p servers + 1p tools** |
-| Buffer storage (forecast layer) | Redis + TimescaleDB / InfluxDB | **3p** |
-| Pre-triage classifier | **Rules** — explicit if-then logic | **1p** |
-| Finite State Machine + transition rules | Deterministic state machine | **1p** |
-| Trigger evaluation (threshold / trajectory / uncertainty) | Deterministic rules over forecast output | **1p** |
-| Curated corpora (Splunk Processing Language patterns + incident memories) | Vetted network-domain knowledge | **1p** |
-| Evaluator (precision, recall, token cost, composite) | Deterministic scoring | **1p** |
-
-> **A model alone is a chatbot. Rules alone are a runbook.** Vigil **buys** foundation models (everything that needs pattern recognition — text reasoning, time-series forecasting, retrieval embeddings). Vigil **builds** the network-domain logic — FSM, threshold rules, pre-triage, curated corpora, evaluator, schema enforcement, the two new Cisco Catalyst tools. Every model release improves Vigil for free; the network-domain logic is the differentiator.
-
-**Why pre-triage is rules, not a model:** Pre-triage is *logical filtering, not pattern recognition*. The decision ("did three corroborating signals fire, or just one repeating one?") is explicit if-then logic. Applying a model where the patterns are already articulable is the wrong tool. Auditability and sub-millisecond latency are supporting reasons. **Deliberately chosen.**
-
----
-
 ## Reference Investigation — One End-to-End Run
 
 The Packet Loss scenario, top-to-bottom — what the war-room user interface renders when the operator clicks Run Investigation. Every event timestamped from T+0; every input and output captured in the structured audit trail.
@@ -413,7 +357,29 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
 
 ## How Vigil Scales as a Platform — One Workflow, Customized Per Team
 
-The same MCP-guided workflow framing visualized — **one canonical engine, forked and customized per team, scaled by adding MCP tools and approval thresholds**, not by rewriting the agent.
+**Vigil is an MCP-guided workflow.** A customizable, auditable, human-in-loop investigation playbook that runs on top of Splunk MCP and Cisco Catalyst MCP servers. Each team forks the default workflow, adds their own steps, and configures their own confidence thresholds — **autonomous on routine cases, human-in-loop approval on novel or high-risk cases**.
+
+### Five Dimensions of That One Identity
+
+| Dimension | What It Means in Vigil |
+|---|---|
+| **MCP-guided** | Vigil reads MCP tool catalogs (Splunk + Cisco Catalyst) and orchestrates calls dynamically. MCP is the only integration contract. **New tools added to the catalog become callable in the workflow automatically — no application code changes.** |
+| **Workflow** | A 7-state Finite State Machine with explicit, auditable transitions. Not a free-form agent. Defined in code today, forkable as a markdown / YAML template per team in the v2 Skill Editor. |
+| **Customizable per team** | Each team forks the default `TRIAGE → INVESTIGATING → HYPOTHESIZING → REMEDIATING / ESCALATING` path and adds their own steps — "Post to Slack," "Open a Jira ticket," "Trigger a ServiceNow change request" — without writing application code. Custom steps register as MCP tools. |
+| **Human-in-loop approvals** | The Finite State Machine routes by confidence band. **High confidence (≥ 0.90) → autonomous remediation.** **Low confidence → human approval gate before any action.** Each team configures their own threshold; the policy lives in the workflow, not in the operator. |
+| **Auditable** | Every investigation produces a Pydantic-validated JSON report — FSM transitions, tool calls, Retrieval-Augmented Generation retrievals, forecast snapshot, confidence score, evidence. Sarbanes-Oxley + SOC 2 ready. |
+
+### How Teams Customize the Same Underlying Workflow
+
+| Team | Customization on Top of Default Vigil | Approval Threshold |
+|---|---|---|
+| **Splunk Security Operations** | Add step: "Open ServiceNow ticket on ESCALATING" + Cisco threat-intel lookup before remediation | Autonomous suppress / remediate; **human approval on every ESCALATING** |
+| **Splunk Observability** | Wire Phase 4 forecast as the alert trigger + new step "Post predictive SLO violation to Slack" | Autonomous suppress; **analyst approval before public status-page update** |
+| **Splunk IT Service Intelligence** | Add step: "Trigger PagerDuty on high-blast-radius escalation" + service-dependency walk | Autonomous for L3 incidents; **human approval for L1 / L2** |
+| **Cisco AgenticOps** | Vigil's Finite State Machine registers as a Canvas Workflow Template; customers further fork inside Canvas | **Configurable per Canvas tenant** |
+| **Cisco Cloud Security** | Add step: "Cross-reference Cisco threat intelligence before ESCALATING" + auto-isolate on confirmed match | Autonomous on known-pattern threats; **human approval on novel signatures** |
+
+### The Pattern Visualized — One Canonical Engine, Forked Per Team
 
 ```
                   ┌──────────────────────────────────────────────────┐
