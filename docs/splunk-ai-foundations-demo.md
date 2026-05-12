@@ -9,37 +9,44 @@
 
 ## Why This Project Fits This Role
 
-Read the JD again — every major responsibility maps to a shipped artifact in Vigil:
+Every major JD responsibility maps to a shipped Vigil artifact:
 
 | JD Responsibility | Vigil Artifact |
 |---|---|
-| *"Domain-specific foundation models (such as the **Cisco Time Series Model**)"* | `splunk_evals.ipynb` — 60-series benchmark of CTSM vs Chronos vs TimesFM. `docs/model-evaluation.md` — five findings + prioritized 4-step productization roadmap. |
+| *"Domain-specific foundation models (such as the **Cisco Time Series Model**)"* | `splunk_evals.ipynb` — 60-series benchmark of CTSM vs Chronos vs TimesFM. Five findings + 4-priority engineering roadmap in the same notebook. |
 | *"Build agentic workflow frameworks"* | Phase 2 — 7-state Finite State Machine with auditable transitions, per-state tool allowlists, threshold-based routing. |
 | *"Standardize AI skills using protocols like **MCP**"* | Phase 1 — bridges Splunk MCP server + Cisco Catalyst MCP server in one investigation loop. Two new Catalyst tools (`get_network_topology`, `get_telemetry_metrics`) fill a real gap. |
-| *"Responsible AI & Governance"* | `docs/prd.md` — Splunk AI Governance Alignment table mapping all five Splunk principles to architecture. Pydantic JSON audit trail per investigation. |
-| *"Addressing financial goals (e.g., **cloud margin**)"* | Cost-reduction stack: schema enforcement (57% off) + prompt caching (Lever 1) + Haiku tiering (Lever 2) = 80–85% off unconstrained baseline. $423K → ~$620K annual saving at 10K alerts/day. |
-| *"GTM & Ecosystem"* | `docs/competitive-landscape.md` — 5-tier market map, 25+ vendors, three defensible advantages, ecosystem partnership posture vs. Cisco roadmap. |
-| *"Customer Advocacy / unarticulated needs"* | Top-5 Customer Problems framed entirely in **Splunk's own published 2025-2026 research** — 55% false positives, 81% manual investigation pain, etc. |
-
-**The one-line story to open with:**
-> *"Cisco and Splunk both shipped MCP servers. Neither shipped the reasoning layer that connects them. I built that reasoning layer — and the foundation-model evaluation that grounds it — as a working prototype. Every responsibility in this role is something I've already built, measured, and shipped against."*
+| *"Responsible AI & Governance"* | Splunk AI Governance Alignment table mapping all five Splunk principles to architecture. Pydantic JSON audit trail per investigation. |
+| *"Addressing financial goals (e.g., **cloud margin**)"* | Three cost levers — schema enforcement + prompt caching + Haiku tiering = **80–85% off unconstrained baseline. ~$620K/year saved at 10K alerts/day.** |
+| *"GTM & Ecosystem"* | `docs/competitive-landscape.md` — 5-tier market map, 25+ vendors, three defensible advantages, partnership posture vs Cisco roadmap. |
+| *"Customer Advocacy"* | Four Customer Problems framed entirely in **Splunk's own published 2025–2026 research** — 55% false positives, 81% manual investigation pain, etc. |
 
 ---
 
-## Demo Flow — 15 Minutes, 9 Beats
+## Opening Line — The 30-Second Anchor
+
+If you only have 30 seconds, say this:
+
+> *"Cisco and Splunk both shipped Model Context Protocol servers. Neither shipped the reasoning layer that connects them. I built that reasoning layer — and the Cisco Time Series Model evaluation that grounds it — as a working prototype. Every responsibility in this role is something I've already built, measured, and shipped against."*
+
+That sentence does three things at once: (1) names the gap, (2) signals you've done the work, (3) ties to the JD without naming it.
+
+---
+
+## Demo Flow at a Glance — 10 Beats, 15 Minutes
 
 | # | Beat | Time | What to Show | JD Hook |
 |:-:|---|:-:|---|---|
-| 1 | Opening pitch | 1 min | One-Line Story slide / spoken | Sets up the whole demo |
-| 2 | Customer problems in Splunk's own words | 1 min | PRD Section "Five Customer Problems" | Customer Advocacy |
-| 3 | Domain-specific model evaluation | 3 min | `splunk_evals.ipynb` results table + `docs/model-evaluation.md` priorities | **Develop Specialized Models** |
-| 4 | Agentic workflow framework | 2 min | Run the Packet Loss scenario in the UI · Full Trace overlay | **Enable Agentic Workflows** |
-| 5 | MCP standardization | 1 min | Phase 1 architecture diagram + the two new Catalyst tools | **Build Connectivity** |
-| 6 | Proactive forecasting layer | 2 min | Forecast Strip across 4 scenarios — especially False Positive (all-green) | **Drive AI Platform Strategy** + **Specialized Models** |
-| 7 | Cloud margin (cost discipline) | 2 min | PRD cost table + Levers 1+2 breakdown | **Financial Goals (cloud margin)** |
-| 8 | Responsible AI alignment | 1 min | PRD Splunk AI Governance Alignment table | **Responsible AI & Governance** |
-| 9 | Where it sits in the market | 1 min | `competitive-landscape.md` market map quadrant + 5-tier summary | **GTM & Ecosystem** |
-| — | Close + pivot to Q&A | 1 min | The Bottom Line table from PRD | — |
+| 1 | Opening + One-Line Story | 1 min | PRD top | Sets up everything |
+| 2 | The Four Customer Problems | 1 min | PRD §2 | Customer Advocacy |
+| 3 | Why Now — Splunk leadership | 30 sec | PRD §3 | Industry timing |
+| 4 | Model Evaluation (notebook) ⭐ | 3 min | `splunk_evals.ipynb` | **Develop Specialized Models** |
+| 5 | Platform Architecture + Live Run | 4 min | PRD §4–8 + UI | **Enable Agentic Workflows** + **Build Connectivity** |
+| 6 | Cost Discipline | 1.5 min | PRD §7 Phase 3 | **Financial Goals / Cloud Margin** |
+| 7 | Competitive Position | 1 min | PRD §10 | **GTM & Ecosystem** |
+| 8 | Vigil as Platform ⭐ | 2 min | PRD §14 | **Drive AI Platform Strategy** |
+| 9 | Cisco AI Canvas integration | 1 min | PRD §16 | Partnership story |
+| 10 | The Bottom Line — close | 30 sec | PRD §17 | Strategic close |
 
 ---
 
@@ -47,223 +54,338 @@ Read the JD again — every major responsibility maps to a shipped artifact in V
 
 ### Beat 1 — Opening (1 min)
 
-**Show:** PRD page 1 (One-Line Story) or just the running UI.
+**JD hook:** Sets up the demo.
+**Show:** PRD top section (One-Line Story) on screen.
 
-**Say:**
-> "Splunk's 2026 prediction says traditional reactive operations are no longer enough — agentic AI is the path. Cisco's AgenticOps vision says the same thing. Neither has shipped the application layer that fulfills that vision. I built a prototype of it. **Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop, grounded by domain-specific foundation models — Cisco's Time Series Model for forecasting, Anthropic Claude for reasoning, OpenAI embeddings for retrieval. It's mock data and a single-engineer prototype, but every responsibility in your job description maps to something I built and measured here."**
+**Talk track:**
 
-**Key:** Acknowledge mock status proactively. You're showing PM thinking, not selling a startup.
+> "Splunk's 2026 predictions explicitly say reactive operations are no longer enough — agentic AI is the path. Cisco's AgenticOps vision at Cisco Live 2025 says the same thing. Neither has shipped the application layer that fulfills that vision. I built a prototype of it."
 
----
+> "**Vigil is an agentic incident commander that bridges Splunk MCP and Cisco Catalyst MCP in one investigation loop, grounded by domain-specific foundation models — Cisco Time Series Model for forecasting, Anthropic Claude for reasoning, OpenAI embeddings for retrieval.**"
 
-### Beat 2 — Customer Problems (1 min)
+> "Up-front honest framing: this is mock data and a single-engineer prototype. But every responsibility in the AI Foundations job description maps to something I've built and measured here. I'll walk you through it in 15 minutes."
 
-**Show:** PRD section *"The Five Customer Problems — In Splunk's Own Words"*
+**Key signal:** You're showing PM thinking and execution rigor, not selling a startup. The "mock data, single-engineer prototype" acknowledgment up-front earns credibility for everything that follows.
 
-**Say:**
-> "Before I built anything, I went to Splunk's own research. The 5 problems Vigil targets aren't a guess — every one is anchored in Splunk's published 2025-2026 material: 55% of orgs have too many false positives (State of Security 2025), 81% of SOC pros name manual investigation as the #1 contributor to slow response (Dimitri McKay), 73% of observability teams report outages caused by ignored alerts (Patrick Lin)."
-
-> "The signal that mattered most was **Hao Yang's 2026 prediction** that MTTR becomes 'a snapshot of how late we were in the process' — outcome-based KPIs like false positive reduction, autonomous triage precision, and risk avoided are the real measures. That's why Vigil's results table leads with suppression rate and precision, not Mean Time to Resolve."
-
-**Key insight to land:** This is a Senior Staff PM signal — *I read the org's own research and built against its language, not generic industry stats.*
+**Pivot to next:** *"Before I built anything, I went to Splunk's own research..."*
 
 ---
 
-### Beat 3 — Domain-Specific Model Evaluation (3 min) ⭐ HIGHEST-LEVERAGE BEAT
+### Beat 2 — The Four Customer Problems (1 min)
 
-**This is the beat where you most directly demonstrate the JD's "Develop Specialized Models" responsibility.**
+**JD hook:** Customer Advocacy.
+**Show:** PRD section 2 "The Four Customer Problems — In Splunk's Own Words."
 
-**Show:**
-1. Open `splunk_evals.ipynb` — scroll to the Three-Model Benchmark Results table.
-2. Then open `docs/model-evaluation.md` — show the Plain-English Verdict + Priority table.
+**Talk track:**
 
-**Say:**
-> "The Cisco Time Series Model is in your job description. I ran a 60-series benchmark — Border Gateway Protocol route count, Central Processing Unit utilization, packet drop rate — comparing CTSM, Amazon's Chronos, and Google's TimesFM on Mean Absolute Scaled Error and symmetric Mean Absolute Percentage Error."
+> "These aren't generic industry pains. Every single problem statement is anchored in Splunk's own 2025–2026 published material."
 
-> "Three findings: (1) **CTSM is the most accurate model overall, but the win shows up where it matters — Border Gateway Protocol flap detection, MASE 0.80 versus Chronos 0.83 versus TimesFM 1.14.** TimesFM is worse than a naive baseline for BGP. (2) **CTSM has a meaningful weakness on packet drop** — MASE 1.27, tied with Chronos but worse than naive. That's a training data gap: CTSM was trained on smooth observability metrics; burst-pattern signals like packet drop are underrepresented. (3) **CTSM's public API today returns point forecasts only — no quantile outputs.** That blocks Continuous Ranked Probability Score measurement and blocks confidence-based routing."
+> "**Problem 1 — false positive fatigue:** 55% of orgs deal with too many false positives, 32% of an analyst's day spent on false alarms, 94% of CISOs name false alerts as a top burnout driver. Vigil's answer is Phase 2.5 pre-triage — 35–40% of alerts suppressed at zero tokens before any model call."
 
-> "So I wrote a **product roadmap** for the CTSM team — four prioritized items: P0 ask Cisco to expose quantile outputs via API (one hour of work on their side, unblocks confidence-based decisions everywhere); P1 test CTSM with proper multiresolution input on real Splunk data (one to two days, may close the packet drop gap with zero training); P2 continued pre-training on burst-pattern synthetic data (next quarter); P3 supervised fine-tuning on labeled Splunk incident windows (next half — the proprietary moat over time)."
+> "**Problem 2 — manual fragmented investigation:** 81% of SOC pros name disconnected tools as the number-one slowdown. $58K average cost per incident. Vigil bridges Splunk and Cisco Catalyst in one loop — 47 minutes to 35 seconds."
 
-**Key:** Show that you don't just consume models — you evaluate them rigorously, identify gaps, and write a product plan that an internal model team could act on. **This is exactly what the JD asks for.**
+> "**Problem 3 — tool sprawl:** 78% say tools are disconnected. Vigil's answer is structural — Vigil is a reasoning layer, not another platform. Same RBAC, same data, no new data plane."
 
-**Anticipated follow-up:** "How would you measure success for these priorities?" Have the success criteria ready — they're in the doc: packet drop MASE < 1.0 (beats naive), BGP MASE < 0.75, CRPS competitive with Chronos.
+> "**Problem 4 — reactive operations are no longer enough:** This is a direct quote from Splunk's 2026 predictions. Vigil's Phase 4 forecasting layer — Cisco Time Series Model plus Chronos — fires triggers up to 10 hours before the alert system would."
 
----
+**Key signal:** *"I read Splunk's own research and built against its published language, not generic industry stats."* This is the Senior Staff PM tell — depth of upfront research, not vibes.
 
-### Beat 4 — Agentic Workflow Framework (2 min)
-
-**Show:** Run the **Packet Loss scenario** live in the UI. While it runs, open the Full Trace overlay.
-
-**Say:**
-> "When the alert fires, the system makes five sequential decisions, all auditable. **Pre-Triage rules-based — zero tokens, sub-millisecond — decides this alert is real**. State transitions are threshold-based, not black-box LLM judgment: every transition cites the rule that fired. **TRIAGE retrieves the right SPL pattern from Pinecone, runs the topology lookup. INVESTIGATING pulls telemetry and queries logs. INVESTIGATING retrieves a past incident match at 0.84 similarity — INC-2024-0891, exfiltration, ESCALATED. HYPOTHESIZING confirms a single source IP at 71% of egress — threshold rule fires — ESCALATING.**"
-
-> "Open the Full Trace overlay — every event timestamped from T+0, every input and output captured, every state transition with its reason inline. Copy JSON or download as a file. **This is the audit trail Splunk's 2026 governance prediction calls 'mandatory' — shipped, not roadmapped.**"
-
-**Key:** Hover on the state transitions to show the reasoning in line. Then click the Full Trace button — this is your "log everything" answer.
+**Pivot to next:** *"Splunk's leadership backed all of this up explicitly in 2026..."*
 
 ---
 
-### Beat 5 — MCP Standardization (1 min)
+### Beat 3 — Why Now (30 sec)
 
-**Show:** Phase 1 section of the PRD with the two Catalyst tool tables.
+**JD hook:** Industry timing.
+**Show:** PRD section 3 — the 6-row "Why Now" table.
 
-**Say:**
-> "The MCP servers exist — Splunk shipped 14 tools in v1.1, generally available. Cisco Catalyst ships its own. **Nobody bridges them.** Vigil consumes Splunk's existing four most useful tools and adds two new Cisco Catalyst tools that exist in neither vendor's published server: `get_network_topology` and `get_telemetry_metrics`. Stateless, RBAC passthrough — the agent inherits the Splunk user's permissions, no privilege escalation."
+**Talk track:**
 
-> "This is the kind of standardization the JD asks for — universal connectors for AI workflows. Same shape, both vendors, one investigation loop."
+> "Six rows mapping Splunk's own published predictions to what Vigil already ships. The two that matter most:"
 
-**Key:** Don't over-explain MCP — assume your interviewer knows. Land the *new tools fill a gap* point quickly.
+> "**Hao Yang, Splunk Security Predictions 2026** — and I'll read this exactly: *'MTTR becomes less a measure of performance and more a snapshot of how late we were in the process. SOC directors will look toward outcome-based measures — reduction in false positives, precision of autonomous triage, risk avoided rather than risk responded to.'* That's why Vigil's results table leads with suppression rate and precision, not MTTR."
 
----
+> "**Cisco Time Series Model launched November 24, 2025** — open weights, 300 billion datapoints, designed for observability and agentic workflows. Vigil benchmarked it against Chronos and TimesFM the week it dropped. **CTSM v1.0 is due early 2026. The partnership window is open now.**"
 
-### Beat 6 — Proactive Forecasting Layer (2 min)
+**Key signal:** *Vigil is precisely aligned with what Splunk is publicly saying — not ahead of the market, with the market.*
 
-**Show:** The Forecast Strip at the top of the UI. Click through all four scenarios.
-
-**Say:**
-> "This is where domain-specific foundation models and agentic workflows compose. **Cisco Time Series Model runs continuously on Splunk telemetry — Border Gateway Protocol routes, CPU, packet drop — forecasting 24 steps ahead, about two hours.** Chronos runs in parallel and provides the P10 / P50 / P90 probability distribution — that's what drives the FSM's confidence routing."
-
-> "Three trigger types: threshold (P50 forecast breaches a hard limit — orange pulse), trajectory (slow drift — amber), uncertainty (P90 is dangerous even when P50 looks fine — violet). For the BGP Flap scenario, **the trigger fires 18 minutes before the alert system would**. For the False Positive scenario, **all three sparklines stay green — the foundation model confirms the alert is noise before the FSM even runs.**"
-
-> "This gives Vigil three knowledge sources, one per time orientation — **past** (Pinecone incident memory), **present** (pre-triage rules + Splunk telemetry), **future** (CTSM + Chronos forecast). No current competitor has all three. This is the architecture Splunk's leadership has been calling for — Kamal Hathi: *'agentic AI lets organizations get ahead of incidents, contain issues before they spread.'*"
-
-**Key:** This is the *most direct* demonstration of the JD's "domain-specific foundation models" plus "agentic workflows" responsibilities composed into one system. The False Positive frame (all-green strip) is the killer image.
-
-**Caveat to surface proactively:** *"The forecast data here is pre-computed fixtures matched to each scenario's signature — the architecture is real and shippable; live model inference is roughly a week of work and is gated on Cisco exposing quantile outputs, which is Priority 0 in my model-evaluation roadmap."*
+**Pivot to next:** *"Let me show you the benchmark — this is the JD's 'develop specialized models' responsibility, demonstrated."*
 
 ---
 
-### Beat 7 — Cloud Margin (2 min)
+### Beat 4 — Model Evaluation (notebook) ⭐ HIGHEST-LEVERAGE BEAT (3 min)
 
-**Show:** PRD Phase 3 Evaluator table + the "Two further cost levers" table immediately below.
+**JD hook:** *"Develop Specialized Models: ensuring they outperform general-purpose alternatives through rigorous evaluation."* This is the single most important beat — the Cisco Time Series Model is literally named in the JD.
 
-**Say:**
+**Show:** `splunk_evals.ipynb` — scroll to the **VP Executive Summary** at the top, then to the **Key Findings — Five Takeaways** section near the bottom.
+
+**Talk track:**
+
+> "Cisco Time Series Model is in your job description. The week it dropped, I ran a 60-series benchmark — Border Gateway Protocol route count, CPU utilization, packet drop rate — comparing CTSM, Amazon's Chronos-T5-Small, and Google's TimesFM-2.5 on Mean Absolute Scaled Error and symmetric Mean Absolute Percentage Error."
+
+*Scroll to results table.*
+
+> "**Three findings.** First: CTSM is the most accurate model overall — MASE 0.967 versus Chronos 0.971 versus TimesFM 1.322. The win shows up exactly where it matters — Border Gateway Protocol flap detection, MASE 0.80. **TimesFM at 1.14 is worse than a naive baseline — copying yesterday's number forward beats it.**"
+
+> "Second: CTSM has a meaningful weakness on packet drop — MASE 1.27, tied with Chronos but worse than naive on both. That's a training data gap. CTSM was trained on smooth observability metrics; packet drop is a burst-pattern signal. Burst patterns are underrepresented."
+
+> "Third — and this is the most consequential finding: **CTSM's public API returns a single point forecast.** No quantile outputs. That blocks Continuous Ranked Probability Score measurement and blocks confidence-based routing — which is the whole point of Vigil's Finite State Machine."
+
+*Pause.* *Scroll to the Engineering Roadmap section at the bottom.*
+
+> "So I wrote a four-priority product roadmap for the CTSM team. **Priority 0 — ask Cisco to expose quantile outputs via API.** One hour of work on their side. The reason it's one hour: **Splunk's own CTSM launch blog states explicitly that the model 'produces quantile and point predictions'** — the quantiles are already in the architecture, only the API response payload is missing them. Unblocks confidence routing across every Vigil deployment."
+
+> "**Priority 1** — one to two days — test CTSM with proper multiresolution input on real Splunk telemetry. The benchmark only fed fine-resolution data; CTSM was designed for coarse + fine simultaneously. May close the packet drop gap with zero training investment."
+
+> "**Priority 2** — next quarter — continued pre-training on burst-pattern synthetic data. **Priority 3** — next half — supervised fine-tuning on labeled Splunk incident windows. **That's the proprietary moat over time** — every customer's labeled incidents flow back into CTSM, the base model gets domain-specific to their environment."
+
+**Key signal:** You don't just consume foundation models — you evaluate them rigorously, identify gaps, write product plans an internal model team can act on. **This is exactly what the JD asks for.**
+
+**Pivot to next:** *"Let me show you the actual workflow this benchmark grounds..."*
+
+**Anticipated Q:** "How would you measure success on each priority?" *Answer ready in the notebook: packet drop MASE below 1.0 beats naive; BGP MASE below 0.75; CRPS competitive with Chronos.*
+
+---
+
+### Beat 5 — Platform Architecture + Live Run (4 min)
+
+**JD hook:** *"Enable Agentic Workflows"* + *"Build Connectivity via MCP."*
+**Show:** PRD §4 Platform diagram first (30 sec), then switch to the running UI for the live run.
+
+**Talk track — Part A: Architecture overview (45 sec):**
+
+*Show PRD §4 — the 4-phase platform diagram.*
+
+> "Four phases, one loop. Alert comes in. **Phase 2.5 Pre-Triage** — rules-based, zero tokens, sub-millisecond — filters 35–40% of alerts before any model call. Surviving alerts go through **Phase 2 Finite State Machine investigation** — TRIAGE, INVESTIGATING, HYPOTHESIZING — grounded by Pinecone Retrieval-Augmented Generation."
+
+> "**Phase 1** is the MCP bridge — Vigil consumes four Splunk MCP tools and adds two new Cisco Catalyst tools that exist in neither vendor's published server. **Phase 3 Evaluator** scores every run. **Phase 4 Proactive Forecasting** runs continuously and fires pre-alerts before the FSM."
+
+> "Now let me run a real scenario in the UI."
+
+**Talk track — Part B: Live run on Packet Loss scenario (2.5 min):**
+
+*Switch to UI tab. Click "Packet Loss" scenario, then "Run Investigation."*
+
+> "Watch the Forecast Strip at the top — packet drop is already orange, T-minus 8 minutes to threshold breach. **The forecast fired the trigger before the alert system would have**. Now the alert arrives."
+
+*Point to Pre-Triage entering the feed.*
+
+> "**Pre-Triage**: alert scored 0.78, three corroborating signals, proceed. Zero tokens, sub-millisecond — that's the rules-based logical filter, deliberately not a model. **TRIAGE** — Pinecone retrieves the `packet_loss_egress` SPL pattern. Topology lookup: this device is on VLAN 100, uplink to sj-core-01."
+
+> "**INVESTIGATING** — telemetry pulled, run_spl confirms 2847 errors per minute starting 14:30. Pinecone Incident Memory hits — INC-2024-0891, 0.84 similarity, prior exfiltration incident, ESCALATED."
+
+> "**HYPOTHESIZING** — generated SPL finds source IP 10.14.22.87 at 71.2% of egress. Threshold rule fires: single source IP above 60% of egress equals potential exfiltration. **ESCALATING**."
+
+*Click "Full Trace" button to open the overlay.*
+
+> "Open the Full Trace overlay — every event timestamped from T+0, every input and output captured, every state transition with the rule that fired inline. Copy JSON or download as a file. **This is the audit trail Splunk's 2026 governance prediction calls 'mandatory' — shipped, not roadmapped.**"
+
+**Talk track — Part C: Phase 4 forecasting cycle (45 sec):**
+
+*Close the overlay. Click through the four scenario tabs.*
+
+> "Cycle through the four scenarios — Packet Loss fires threshold trigger 8 minutes ahead, BGP Flap fires threshold 18 minutes ahead, CPU Spike fires uncertainty trigger because the P90 confidence band widens dangerously, False Positive — and this is the killer frame — **stays all-green. The foundation model confirms the alert is noise before the FSM even runs.**"
+
+> "Three knowledge sources, three time orientations. **Past** — Pinecone incident memory. **Present** — pre-triage rules + Splunk telemetry. **Future** — CTSM and Chronos forecast. **No current competitor has all three.**"
+
+**Caveat to surface proactively:** *"The forecast data is pre-computed fixtures matched to each scenario. The architecture is real and shippable; live model inference is one week of work, gated on Cisco exposing quantile outputs — that's Priority 0 in my model-evaluation roadmap."*
+
+**Key signal:** Live demo, end-to-end, audit-trail visible. Shows three JD responsibilities composed: domain-specific models + agentic workflows + connectivity via MCP.
+
+**Pivot to next:** *"Let me show what this actually costs to run..."*
+
+---
+
+### Beat 6 — Cost Discipline (1.5 min)
+
+**JD hook:** *"Addressing financial goals (e.g., cloud margin)."*
+**Show:** PRD §7 — Phase 3 Evaluator table (the precision/cost comparison) then jump to the Results & Outcomes table for the $620K row.
+
+**Talk track:**
+
 > "The JD calls out cloud margin explicitly. Here's the stack I shipped."
 
-> "Baseline: unconstrained generic LLM, $0.056 per investigation. **Lever 0 — schema enforcement** on the same base model takes it to $0.024, with precision rising from 0.55 to 0.91 — that's matching Cisco's claimed Deep Network Model target, today, using prompt engineering alone."
+> "**Baseline** — unconstrained generic LLM, $0.056 per investigation. **Lever 0 — schema enforcement** on the same base model takes that to $0.024, with precision rising from 0.55 to 0.91. **That precision number matches Cisco's claimed Deep Network Model target — today, using prompt engineering alone.**"
 
-> "**Lever 1 — prompt caching with Anthropic's `cache_control` markers.** System prompt and tools are static within an FSM state's multi-turn loop. First call writes the cache at 1.25x cost, subsequent calls read it at 10% — that's a 90% discount on cached tokens."
+> "**Lever 1 — prompt caching with Anthropic's `cache_control` markers.** System prompt and tools are static within an FSM state's multi-turn loop. First call writes the cache at 1.25x cost; subsequent calls read at 10% — 90% discount on cached tokens."
 
-> "**Lever 2 — model tiering.** Haiku 4.5 — $1 / $5 per million tokens — for the routing states: TRIAGE, INVESTIGATING, REMEDIATING. Sonnet 4.6 — $3 / $15 — reserved for HYPOTHESIZING where the actual root-cause decision happens. Haiku is roughly 3x cheaper, the final decision still runs on Sonnet so the 0.91 precision is preserved."
+> "**Lever 2 — model tiering.** Haiku 4.5 — $1 input, $5 output per million tokens — for the routing states. Sonnet 4.6 — $3 / $15 — reserved for HYPOTHESIZING where the actual root-cause decision happens. Haiku is roughly three times cheaper; the final transition decision still runs on Sonnet so the 0.91 precision floor is preserved."
 
-> "**Net effective cost: $0.010 to $0.014 per investigation — 80 to 85% lower than the unconstrained baseline.** At 10,000 alerts per day, annual saving rises from $423K to roughly $620K. That maps directly to cloud margin."
+> "**Net effective cost: $0.010 to $0.014 per investigation — 80 to 85% lower than the unconstrained baseline.** At 10,000 alerts per day, annual saving rises from $423K to approximately $620K versus unconstrained. **That maps directly to cloud margin in the JD.**"
 
-**Key:** This is the financial-discipline signal. Senior Staff PM cares about unit economics. Have the per-token math ready if pressed.
+**Key signal:** Unit economics fluency. Senior Staff PM cares about cost per decision, not just whether the system works.
 
----
-
-### Beat 8 — Responsible AI (1 min)
-
-**Show:** PRD Splunk AI Governance Alignment table.
-
-**Say:**
-> "Splunk publishes five AI governance principles. Vigil implements all five as core architecture, not a compliance afterthought."
-
-> "**Accountability** — Pydantic JSON report per investigation: FSM transitions, tool calls, RAG retrievals, forecast snapshot, confidence, evidence. **Transparency** — every transition cites the rule that fired, not black-box LLM judgment. **Privacy** — RBAC passthrough; no raw logs leave the customer's data plane beyond Pinecone summaries. **Fairness** — rules-based pre-triage + configurable thresholds prevent model drift across incident classes. **Resilience** — default-to-escalation; the system never guesses on live infrastructure."
-
-**Key:** Land "core architecture not bolted on" and move on. This is a signal of seriousness, not a long discussion.
+**Pivot to next:** *"So where does Vigil sit in the market?"*
 
 ---
 
-### Beat 9 — Competitive Position (1 min)
+### Beat 7 — Competitive Position (1 min)
 
-**Show:** `docs/competitive-landscape.md` market map quadrant.
+**JD hook:** *"GTM & Ecosystem"* + *"strategic narratives for partners."*
+**Show:** PRD §10 — the market map quadrant.
 
-**Say:**
-> "I went deep on competitive positioning — 25 vendors across five tiers. Two axes: scope (network-specialist vs. general observability) and autonomy (reactive vs. agentic). **Vigil sits alone in the upper-left.** Cisco AgenticOps is closest but not shipped. AWS DevOps Agent + Splunk shipped in April 2025 — applications-layer, not network. Splunk's IT Service Intelligence has forecasting but statistical models only, not foundation models. Datadog Bits AI and Dynatrace Davis are agentic but observability-broad, not network-specialist."
+**Talk track:**
 
-> "**Three defensible advantages:** Cisco + Splunk in one loop — owned by the same parent post-acquisition but no shipped product bridges them. Foundation-model forecasting + agentic investigation in one system — forecasting specialists don't investigate, agentic competitors don't forecast. **Built to absorb Cisco's roadmap, not race it** — when AI Canvas ships, the FSM maps to a Canvas workflow; when Deep Network Model ships, the LLM call swaps out. Partnership posture, not competition."
+> "I went deep on competitive positioning — 25 vendors across five tiers. Full breakdown in `docs/competitive-landscape.md`."
 
-**Key:** This shows ecosystem thinking and the GTM mindset. The "built to absorb Cisco's roadmap" line is your strongest *Senior Staff PM* signal — it shows you think about the platform's commercial trajectory, not just its features.
+> "Two axes: scope — network-specialist versus general observability — and autonomy — reactive versus agentic. **Vigil sits alone in the upper-left.** Cisco AgenticOps is closest but not shipped. AWS DevOps Agent plus Splunk shipped April 2025 — application-layer, not network. Splunk IT Service Intelligence does forecasting with statistical models, not foundation models. Datadog Bits AI and Dynatrace Davis are agentic but observability-broad, not network-specialist."
+
+> "**Three defensible advantages.** First, Cisco plus Splunk in one investigation loop — owned by the same parent post-acquisition, but no shipped product bridges them. Second, foundation-model forecasting plus agentic investigation in one system — forecasting specialists don't investigate, agentic competitors don't forecast. Vigil is the only product unifying both."
+
+> "Third — and this is the strongest Senior Staff PM signal — **Vigil is built to absorb Cisco's roadmap, not race it.** When AI Canvas ships, the FSM maps to a Canvas workflow. When Deep Network Model ships, the LLM call swaps out. Partnership posture, not competition."
+
+**Key signal:** Ecosystem thinking. You think about commercial trajectory and partnership dynamics, not just features.
+
+**Pivot to next:** *"That brings us to the platform thesis — this isn't just an application..."*
 
 ---
 
-### Closing (1 min)
+### Beat 8 — Vigil as a Platform ⭐ (2 min)
 
-**Show:** PRD "The Bottom Line" table.
+**JD hook:** *"Drive AI Platform Strategy"* + *"shipped as a world-class platform to our global customers and developer ecosystem."*
+**Show:** PRD §14 — "How Vigil Scales as a Platform" — start with the identity definition, then the diagram.
 
-**Say:**
-> "Cisco's AgenticOps timeline is 2025-2026. Every meaningful capability in that vision is buildable today, on Splunk's and Cisco's own released tooling, with measurable results. I built it as a single-engineer prototype to demonstrate the architecture. **The question I'm interested in answering with you is — who owns the incident commander layer when AI Canvas ships, and how do we make it Cisco's?**"
+**Talk track:**
 
-**Key:** End on a question that invites discussion. You're framing yourself as the person who's already thought about *where this lives in the org*.
+> "If you treat Vigil as one application — incident commander — you ship one application. If you treat it as the platform layer underneath, the same code becomes the substrate Splunk Security Operations, Splunk Observability, Splunk IT Service Intelligence, Cisco AgenticOps, and Cisco Cloud Security all build on. **Same code, ten times the surface area.**"
+
+> "The identity in one sentence: **Vigil is an MCP-guided workflow. Customizable, auditable, human-in-the-loop. Each team forks the default workflow, adds their own steps, and configures their own confidence thresholds — autonomous on routine cases, human approval on novel or high-risk.**"
+
+*Show the diagram — canonical workflow at top, three team forks in the middle, MCP registry at the bottom.*
+
+> "Visualized: one canonical workflow at the top. Three team forks in the middle — each with their own custom steps and their own approval threshold. **Splunk SecOps requires human approval on every ESCALATING; Splunk Observability requires analyst approval before public status-page publication; Cisco AgenticOps configures per Canvas tenant.** Every custom step they add registers as a new MCP tool — and flows back into the registry, available to every other team's workflow."
+
+> "**Why this scales.** Onboarding a new team takes one to two weeks versus six to twelve months building from scratch. Knowledge accumulates in one registry, not in five silos. One governance posture, configured per team via thresholds — not five inconsistent audit formats. Every Claude release, every Cisco Time Series Model release, improves every team's workflow simultaneously."
+
+> "**The one sentence:** Vigil is the agentic equivalent of a Splunk dashboard — one shared engine, customized per team, scaled by adding new MCP tools and approval policies, not by rewriting the agent every time a new use case shows up. **That's the AI Foundations charter expressed as a product.**"
+
+**Key signal:** This is the strongest Senior Staff PM signal of the whole demo. You're not pitching a feature — you're pitching a platform-substrate strategy.
+
+**Pivot to next:** *"And it's built specifically to plug into Cisco's announced roadmap..."*
+
+---
+
+### Beat 9 — Cisco AI Canvas Integration (1 min)
+
+**JD hook:** Partnership / GTM / strategic narratives.
+**Show:** PRD §16 — "How Vigil Fits Cisco's AI Roadmap" with the Canvas diagram.
+
+**Talk track:**
+
+> "Cisco announced AgenticOps at Cisco Live 2025 — three roadmap components. **Vigil plugs into all three.**"
+
+*Show the Canvas integration diagram.*
+
+> "**AI Canvas** is the agentic orchestration platform, targeting 2026. Vigil's 7-state FSM IS the workflow that runs on Canvas — the transition graph maps directly to a Canvas template. **No rewrite when Canvas ships.**"
+
+> "**Skills Registry** — the MCP tool catalog. Vigil registers its two new Catalyst tools — `get_network_topology` and `get_telemetry_metrics` — into the registry, and consumes other Skills from it. **Vigil is both consumer and contributor.**"
+
+> "**Deep Network Model** — Cisco's network-tuned LLM, target early 2026. Drop-in replacement for the Claude call inside FSM reasoning states. Schema enforcement preserves the 0.91 precision floor — the model behind the wall changes; the contract doesn't. **Cisco Time Series Model is already benchmarked and used in Phase 4 today.**"
+
+> "**Why this matters for Cisco:** every AgenticOps customer who adopts AI Canvas needs an incident commander workflow to run on it. Vigil is that workflow — with measured precision, measured cost, and a working audit trail. **The canonical first application.**"
+
+**Key signal:** You're not asking Cisco to adapt to Vigil — you've built Vigil to adapt to Cisco. That's partnership-first thinking.
+
+**Pivot to close:** *"So the question I'd close with..."*
+
+---
+
+### Beat 10 — The Bottom Line (30 sec)
+
+**JD hook:** Closing pitch.
+**Show:** PRD §17 — "The Bottom Line" table.
+
+**Talk track:**
+
+> "Cisco's AgenticOps timeline is 2025–2026. Splunk's 2026 predictions made the agentic-AI direction explicit. Every meaningful capability in that combined vision is buildable today, on the tooling both companies have already shipped. I built a single-engineer prototype to demonstrate it. The numbers are measurable: 0.91 precision, 80–85% cost reduction, full audit trail, three trigger types in the proactive forecasting layer."
+
+> "**The question I'd close with is: who owns the agentic reasoning layer when Cisco AI Canvas ships in 2026? And who has the platform substrate that the next 50 applications build on?** That's what this role is for. That's what I want to do."
+
+**Key signal:** End on a question that invites discussion. Position yourself as the person who has already thought about *where this lives in the organization*.
 
 ---
 
 ## Q&A — Likely Questions, Prepared Answers
 
-### Technical Depth Questions
+### Technical Depth
 
 **Q: "Why CTSM and not just fine-tune a GPT or Claude model on time series?"**
-> "Two reasons. First, transformer architecture works for time series only when you tokenize the values appropriately — Chronos does this by scaling and quantization, CTSM extends TimesFM with multiresolution input. A general LLM fine-tuned on time series numerics underperforms a model architected for the modality. Amazon's Chronos paper makes this case quantitatively. Second, CTSM has 500 million parameters and was pre-trained on 300 billion observability datapoints — that scale is out of reach for fine-tuning a general LLM on a customer's data. The right answer is: use CTSM as the base, fine-tune it on the customer's labeled incident corpus — that's Priority 3 in my roadmap doc."
+> "Two reasons. First, transformer architecture works for time series only when you tokenize the values correctly — Chronos does it by scaling and quantization, CTSM extends TimesFM with multiresolution input. A general LLM fine-tuned on time-series numerics underperforms a model architected for the modality — Amazon's Chronos paper makes that case quantitatively. Second, CTSM has 500 million parameters and was pre-trained on 300 billion observability datapoints — out of reach for fine-tuning a general LLM on a customer's data. The right answer is: use CTSM as the base, fine-tune on the customer's labeled incident corpus — that's Priority 3 in my roadmap."
 
-**Q: "How do you decide when to use Haiku vs Sonnet vs Opus?"**
-> "Tier by decision criticality, not by state. Routing states (TRIAGE, INVESTIGATING) orchestrate tool calls — light cognition, Haiku handles it. HYPOTHESIZING is the actual root-cause decision — that's where Sonnet earns its 3x premium. Opus only if the customer's incident workload requires reasoning beyond what Sonnet handles, which the benchmark hasn't shown yet. The discipline is *measure precision per tier* — if Haiku drops precision below the threshold for routing states, switch back. The 0.91 precision number is the gate."
+**Q: "How do you decide Haiku vs Sonnet vs Opus?"**
+> "Tier by decision criticality, not by state. Routing states (TRIAGE, INVESTIGATING) orchestrate tool calls — light cognition, Haiku handles it. HYPOTHESIZING is the actual root-cause decision — that's where Sonnet earns its 3x premium. Opus only if the customer workload requires reasoning beyond Sonnet, which the benchmark hasn't shown. The discipline is measure precision per tier — if Haiku drops precision below threshold for routing states, switch back. 0.91 precision is the gate."
 
 **Q: "Why a Finite State Machine instead of LangGraph or CrewAI?"**
-> "Auditability. The FSM transitions are deterministic threshold rules — every SUPPRESSED, REMEDIATING, or ESCALATING decision cites the rule that fired. Agent frameworks like LangGraph give you the workflow primitive but the LLM controls the transitions; for live network infrastructure, that's the wrong default. The FSM enforces the senior engineer's investigation methodology consistently. When AI Canvas ships, the FSM maps to a Canvas workflow — same primitive, Cisco-native runtime."
+> "Auditability. FSM transitions are deterministic threshold rules — every SUPPRESSED, REMEDIATING, ESCALATING decision cites the rule that fired. Agent frameworks give you the workflow primitive, but the LLM controls the transitions; for live network infrastructure, that's the wrong default. The FSM enforces a senior engineer's investigation methodology consistently. When AI Canvas ships, the FSM maps to a Canvas workflow — same primitive, Cisco-native runtime."
 
 **Q: "How would you measure success for the AI Foundations platform?"**
-> "Three primary KPIs, all customer-facing. **Adoption depth** — number of customer agents in production, number of investigations per customer per day, percentage of customer alerts touched by the platform. **Outcome quality** — false positive suppression rate, autonomous triage precision, percentage of investigations with full audit trail, cost per correct decision. **Ecosystem velocity** — number of skills in the Skills Registry, number of partner-built agents, time from skill submission to ecosystem availability. Splunk's 2026 prediction explicitly names MTTR as a *downstream* metric — outcome-based measures lead."
+> "Three primary KPIs. **Adoption depth** — number of customer agents in production, investigations per customer per day, percentage of customer alerts touched by the platform. **Outcome quality** — false-positive suppression rate, autonomous triage precision, audit-trail completeness, cost per correct decision. **Ecosystem velocity** — Skills in the registry, partner-built agents, time from skill submission to ecosystem availability. Splunk's 2026 predictions explicitly name MTTR as a downstream metric — outcome-based measures lead."
 
-### Product Strategy Questions
+### Product Strategy
 
-**Q: "How do you balance internal use cases versus shipping to external customers?"**
-> "The platform should be dogfooded internally before external GA. Concretely: Vigil's incident commander pattern should ship as the first internal customer of the AI Foundations platform — security and observability portfolios use it, surface bugs, harden the SDKs. Six months later, the same primitives ship as a developer SDK with case studies from internal usage. This is how Anthropic, OpenAI, and AWS shipped their agent frameworks — internal customer first, external GA second."
+**Q: "How do you balance internal product teams versus external customers?"**
+> "Dogfood internally before external GA. Vigil's incident commander pattern is the first internal customer of the AI Foundations platform — Splunk Security, Observability, ITSI use it, surface bugs, harden the SDKs. Six months later, the same primitives ship as a developer SDK with case studies from internal usage. That's how Anthropic, OpenAI, AWS shipped their agent frameworks — internal customer first, external GA second."
 
 **Q: "What's the biggest risk to this strategy?"**
-> "Cisco's Deep Network Model timeline slipping past 2026. The platform's positioning assumes Cisco ships foundation models that we can productize. If that slips, we either (a) wait, losing time-to-market, (b) partner with Anthropic / Google more deeply to fill the gap, or (c) invest in our own model training, which is out of scope for an application company at our scale. Mitigation: structure the platform so the model layer is swappable — that's what Vigil's 3p model abstraction already does. The orchestration and audit trail layers don't depend on which foundation model is underneath."
+> "Cisco Deep Network Model timeline slipping past 2026. The platform's positioning assumes Cisco ships foundation models we can productize. If that slips, we either wait, partner with Anthropic and Google more deeply, or invest in our own training — out of scope for an application company. Mitigation: structure the platform so the model layer is swappable. Vigil's 3p model abstraction already does that — orchestration and audit-trail layers don't depend on which foundation model is underneath."
 
 **Q: "How do you engage with early design partners?"**
-> "Three-tier engagement. Tier 1 design partners get pre-release SDK access plus weekly PM-led product sessions and direct Slack to engineering. They commit to ship one production agent built on the platform within 90 days. Tier 2 partners get monthly office hours and early access to docs. Tier 3 is the public developer community — GitHub issues, monthly office hours, public roadmap. The signal that matters: how many Tier 1 partners renew for a second 90-day commitment. Renewal rate is the only honest measure of whether the platform creates value for them."
+> "Three-tier engagement. Tier 1 design partners get pre-release SDK access, weekly PM-led product sessions, direct Slack to engineering — and commit to ship one production agent within 90 days. Tier 2 partners get monthly office hours and early docs. Tier 3 is the public developer community. The signal that matters: how many Tier 1 partners renew for a second 90-day commitment. Renewal rate is the only honest measure of value."
 
-### Behavioral / Closing Questions
+### Behavioral
 
 **Q: "Tell me about a hard product decision you made on this project."**
-> "Whether to make pre-triage rules-based or use a small ML classifier. The rules-based approach scores 35-40% of alerts at zero tokens, sub-millisecond, every decision auditable. A small classifier might marginally improve recall on edge cases, at the cost of latency, opacity, and adding a model training pipeline. I chose rules. The argument that locked it: pre-triage is *logical filtering, not pattern recognition* — the patterns are already articulable by the team, so a model is the wrong tool. **Putting a foundation model where rules are correct is the kind of cargo-cult AI thinking the Splunk Foundations platform should actively discourage in its developer SDK.**"
+> "Whether to make pre-triage rules-based or use a small ML classifier. Rules-based scores 35–40% of alerts at zero tokens, sub-millisecond, every decision auditable. A small classifier might marginally improve recall at the cost of latency, opacity, and adding a training pipeline. I chose rules. The argument that locked it: **pre-triage is logical filtering, not pattern recognition** — the patterns are already articulable, so a model is the wrong tool. **Putting a foundation model where rules are correct is the cargo-cult AI thinking the Splunk Foundations platform should actively discourage in its developer SDK.**"
 
-**Q: "What would you do in the first 90 days in this role?"**
-> "Three deliverables. Week 1-4: read the customer evidence — every Splunk State of Security / Observability report, every recorded customer call from the prior quarter — and write a one-pager on the top 5 jobs-to-be-done for the platform. Validate that with five customers. Week 5-8: audit the existing AI Foundations roadmap, identify the three highest-leverage cuts and the three biggest missing investments. Week 9-12: ship one visible win — a published evaluation benchmark, a developer-facing SDK improvement, or a customer-validated use case study. Senior Staff PMs earn credibility through shipped artifacts in the first quarter, not strategy documents."
+**Q: "First 90 days in this role?"**
+> "Three deliverables. Weeks 1–4: read every Splunk State of Security and Observability report, every recorded customer call from the prior quarter, write a one-pager on the top five jobs-to-be-done for the platform. Validate with five customers. Weeks 5–8: audit the existing AI Foundations roadmap, identify three highest-leverage cuts and three biggest missing investments. Weeks 9–12: ship one visible win — a published evaluation benchmark, a developer-facing SDK improvement, or a customer-validated case study. **Senior Staff PMs earn credibility through shipped artifacts in the first quarter, not strategy documents.**"
 
 ---
 
 ## What NOT to Do in the Demo
 
-- **Don't oversell the prototype as production.** It's mock data. Acknowledge it once at the start. You're showing PM thinking and execution rigor, not a startup.
-- **Don't read the slides.** Talk through them. The interviewer can read.
-- **Don't get into Python implementation details** unless they ask. The depth signal is architectural and strategic.
-- **Don't claim to have done parts that are roadmap.** "I built a forecasting layer with mock data; the live wiring is documented in my model-evaluation roadmap" is the honest framing.
-- **Don't bash competitors.** "Splunk IT Service Intelligence does forecasting with statistical models, not foundation models" — *factual difference*, not criticism.
+| Pitfall | What to Do Instead |
+|---|---|
+| Overselling mock as production | Acknowledge mock data once up-front, then move on. The architecture is real; the data is demo-scale by design. |
+| Reading slides verbatim | Talk through them. The interviewer can read; they want to hear your reasoning. |
+| Diving into Python implementation details | Stay architectural and strategic unless they pull you into code. |
+| Claiming roadmap items as shipped | "I built a forecasting layer with mock data; live wiring is documented in my model-evaluation roadmap" is the honest framing. |
+| Bashing competitors | "Splunk IT Service Intelligence does forecasting with statistical models, not foundation models" — *factual difference, not criticism.* |
+| Skipping the caveat on Phase 4 | Always say the forecast is mock fixtures + how long live wiring would take. Honesty here is a credibility deposit. |
 
 ---
 
-## What TO Land in the Demo
+## What TO Land
 
 | Signal You're Sending | How to Land It |
 |---|---|
-| *I read Splunk's published research before building* | Cite specific Splunk authors (Hao Yang, Kamal Hathi, Patrick Lin, Dimitri McKay) by name |
+| *I read Splunk's published research before building* | Cite Hao Yang, Kamal Hathi, Patrick Lin, Dimitri McKay by name |
 | *I can productize foundation models, not just consume them* | Walk through the CTSM benchmark + the 4-priority roadmap |
-| *I think in audit trails and governance, not just features* | Show the Full Trace overlay; show the AI Governance Alignment table |
+| *I think in audit trails and governance* | Open the Full Trace overlay; show the Governance Alignment table |
 | *I think about unit economics* | Walk through the three cost levers — schema, caching, tiering |
 | *I think about ecosystem and partnership posture* | "Built to absorb Cisco's roadmap, not race it" |
-| *I have strong opinions defensible by reasoning* | Pre-triage = rules, not ML — *deliberately chosen* |
+| *I have strong opinions defensible by reasoning* | Pre-triage = rules, not ML — deliberately chosen |
+| *I think platform substrate, not feature* | The "How Vigil Scales as a Platform" beat — one workflow, customized per team |
 
 ---
 
 ## Pre-Demo Checklist
 
-- [ ] UI running cleanly on `http://localhost:5174` (or wherever)
-- [ ] All four scenarios runnable; recent run already in History so the Full Trace overlay has data even before live runs
-- [ ] PRD open in a second tab at the *Five Customer Problems* section
-- [ ] `docs/model-evaluation.md` open in a third tab
-- [ ] `docs/competitive-landscape.md` open in a fourth tab
-- [ ] `splunk_evals.ipynb` open in a fifth tab
+- [ ] UI running cleanly on `http://localhost:5173` (or wherever Vite assigned)
+- [ ] All four scenarios runnable; one recent run already in History so Full Trace overlay has data even before live runs
+- [ ] **Tab 1:** PRD open at the One-Line Story section
+- [ ] **Tab 2:** `splunk_evals.ipynb` open at the VP Executive Summary
+- [ ] **Tab 3:** `docs/competitive-landscape.md` open at the market map
+- [ ] **Tab 4:** Vigil UI (`http://localhost:5173`)
 - [ ] Phone on Do Not Disturb
 - [ ] Glass of water nearby — 30 minutes is a long demo
 
 ---
 
-## The Final Frame
+## The Final Frame to Land
 
-Senior Staff PM at the AI Foundations level isn't about *can you build this* — it's about *can you build the platform that lets other PMs and engineers build things like this 10x faster.* The closing line to land:
+Senior Staff PM at the AI Foundations level isn't about *can you build this* — it's about *can you build the platform that lets other PMs and engineers build things like this 10x faster.*
+
+The closing line:
 
 > *"What I shipped here is one application of an AI Foundations platform. The role you're hiring for is to build the platform so the next 50 of these get built by other people. That's what I want to do."*

@@ -158,15 +158,6 @@ Same base model, two prompting strategies. Schema enforcement quantified.
 | Token count | ~11,200 | **~4,847** | 57% reduction — direct cloud margin impact |
 | Cost per run | ~$0.056 | **~$0.024** | At 10K alerts/day: $423,000/year saved |
 
-**Two further cost levers shipped on top of constrained mode** — both active in production code today (`phase2_agent/commander.py`):
-
-| Lever | What It Does | Additional Reduction |
-|---|---|---|
-| **Lever 1 — Prompt caching** | `cache_control` on the system prompt + tool definitions. Within a state's multi-turn loop, every call after the first reads cached input at 10% of normal price (Anthropic ephemeral cache, 90% discount). | ~25–35% off input tokens |
-| **Lever 2 — Model tiering** | Claude Haiku 4.5 ($1/$5 per MTok) for the routing states (TRIAGE, INVESTIGATING, REMEDIATING, ESCALATING); Claude Sonnet 4.6 ($3/$15) reserved for HYPOTHESIZING (the actual root-cause decision). Haiku is roughly 3× cheaper while preserving the schema-enforced 0.91 precision because the final transition decision still runs on Sonnet. | ~30–40% off the routing-state cost |
-
-**Effective production cost per investigation drops to ~$0.010–$0.014** — roughly **80–85% lower than unconstrained baseline**. At 10K alerts/day, annual saving vs unconstrained rises from $423K (constrained alone) to **~$620K**.
-
 ### Phase 4 — Proactive Forecasting (New Layer, Mock in War Room UI)
 
 Every competing product is reactive — alert arrives, agent investigates. Vigil's forecasting layer fires triggers **before** the alerting system would have.
