@@ -370,16 +370,26 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
 | **Cisco AgenticOps** | Vigil's Finite State Machine registers as a Canvas Workflow Template; customers further fork inside Canvas | **Configurable per Canvas tenant** |
 | **Cisco Cloud Security** | Add step: "Cross-reference Cisco threat intelligence before ESCALATING" + auto-isolate on confirmed match | Autonomous on known-pattern threats; **human approval on novel signatures** |
 
-### The Orchestrator Pattern — Vigil MCP Sits Between the Foundation-Model Agent and Every Other MCP
+### The Orchestrator Pattern — Vigil MCP Running on Cisco's Foundation-Model Stack (Target General Availability)
+
+The target-state architecture once Cisco's foundation-model stack reaches General Availability in 2026. Vigil's manifest, FSM, RAG layers, evaluator, and audit trail all stay unchanged — only the foundation-model agent at the top changes from Anthropic Claude (today's implementation) to Cisco's native models.
 
 ```
                   ┌──────────────────────────────────────────────────────────┐
-                  │            FOUNDATION-MODEL AGENT                          │
-                  │   (model-agnostic — swappable at deployment time)          │
+                  │       CISCO FOUNDATION-MODEL STACK (target 2026)            │
+                  │   The agentic AI brain — Cisco-native at General           │
+                  │   Availability                                              │
                   │                                                            │
-                  │   • Cisco Deep Network Model — target early 2026           │
-                  │   • Anthropic Claude — today (Sonnet 4.6 / Haiku 4.5)     │
-                  │   • Any capable Large Language Model — schema enforced    │
+                  │   • Cisco Deep Network Model — agentic reasoning +         │
+                  │     tool orchestration inside FSM states                   │
+                  │   • Cisco Time Series Model — Phase 4 forecasting          │
+                  │     (open-weights today; v1.0 early 2026)                  │
+                  │   • Schema enforcement preserves the 0.91 precision        │
+                  │     contract across both models                             │
+                  │                                                            │
+                  │   Today's transitional implementation: Anthropic Claude    │
+                  │   fills the LLM role until Cisco Deep Network Model ships  │
+                  │   — drop-in replacement, no orchestrator changes.          │
                   │                                                            │
                   │   Receives alert · executes MCP tools · generates report  │
                   └──────────────────────────┬───────────────────────────────┘
@@ -430,7 +440,7 @@ Vigil ships against all five Splunk AI principles as core architecture — not a
    └────────────────────────┘  └────────────────────────┘  └────────────────────────┘  └────────────────────────┘
 ```
 
-**The key insight:** The Vigil MCP **does not call** Splunk MCP or Cisco Catalyst MCP — **the foundation-model agent does**. Vigil's manifest tells the agent *which tools to call, in what Finite State Machine order, with what approval thresholds, and how to record the audit trail.* The agent (Claude today, Cisco Deep Network Model when it ships, any capable Large Language Model under the hood) holds all the MCP connections in a single session and sequences them through Vigil's manifest. **You can add any MCP to the agent's connector list — Claude.ai, a Cisco AgenticOps Canvas tenant, or a self-hosted Anthropic SDK deployment — and reference its tools from Vigil's manifest. That is how the platform scales, and that is why the platform is not locked to any one model vendor.**
+**The key insight:** The Vigil MCP **does not call** Splunk MCP or Cisco Catalyst MCP — **Cisco Deep Network Model does** (today, Anthropic Claude does, until Cisco's model ships). Vigil's manifest tells the foundation-model agent *which tools to call, in what Finite State Machine order, with what approval thresholds, and how to record the audit trail.* The model holds all the MCP connections in a single session and sequences them through Vigil's manifest. **At Cisco AI Canvas General Availability, you add any MCP to the Canvas tenant — Splunk MCP, Cisco Catalyst MCP, ServiceNow MCP, PagerDuty MCP — and reference its tools from Vigil's manifest. That is how the platform scales on Cisco-native infrastructure. The orchestrator does not change; only the catalogue of downstream tools grows.**
 
 ### The Pattern Visualized — One Canonical Engine, Forked Per Team
 
