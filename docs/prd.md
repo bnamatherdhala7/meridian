@@ -27,7 +27,7 @@ These are not generic industry pains. Each problem statement is grounded in Splu
 - **32% of an analyst's day is spent investigating alerts that turn out to be false alarms.** *([Dimitri McKay, Splunk, 2025](https://www.splunk.com/en_us/blog/security/reduce-security-investigation-costs.html))*
 - **94% of Chief Information Security Officers cite false alerts as a top driver of analyst burnout.** *([Splunk CISO Report](https://www.splunk.com/en_us/campaigns/ciso-report.html))*
 
-**Vigil's answer — Phase 2.5 Pre-Triage Classifier:** Rules-based scoring suppresses 35–40% of alerts at **zero tokens, under one millisecond**, before any model call. The False Positive scenario in the war-room user interface demonstrates this visually — the forecast strip stays all-green while the alert is suppressed, before the Finite State Machine even runs.
+**Vigil's answer:** Phase 2.5 Pre-Triage Classifier suppresses **35–40% of alerts at zero tokens, under one millisecond** — before any model call. Visible in the False Positive scenario: forecast strip stays all-green, alert suppressed, FSM never runs.
 
 ### 2. Investigation Is Manual, Fragmented, and Slow
 
@@ -35,7 +35,7 @@ These are not generic industry pains. Each problem statement is grounded in Splu
 - **57% report losing valuable investigation time due to gaps in their data management strategy.** *([Splunk State of Security 2025](https://www.splunk.com/en_us/campaigns/state-of-security.html))*
 - Average direct cost per investigation: **~$58,000 · 50–150 person-hours**. *(Splunk)*
 
-**Vigil's answer — Splunk + Cisco Catalyst in one investigation loop:** The 7-state Finite State Machine sequences five tool calls across Splunk logs, Cisco Catalyst topology, and live telemetry. End-to-end investigation collapses from 47 minutes to ~35 seconds, with full audit trail.
+**Vigil's answer:** Splunk + Cisco Catalyst MCP servers bridged in **one investigation loop**. 7-state Finite State Machine sequences five tool calls across logs, topology, and telemetry. **47 minutes → ~35 seconds**, full audit trail.
 
 ### 3. Tool Sprawl Is the Dominant Source of Operational Inefficiency
 
@@ -43,7 +43,7 @@ These are not generic industry pains. Each problem statement is grounded in Splu
 - **59% point to tool maintenance as the #1 source of Security Operations Center inefficiency.** *([Kirsty Paine, Splunk](https://www.splunk.com/en_us/blog/ciso-circle/how-to-fix-soc-busywork.html))*
 - **46% spend more time configuring tools than defending the organization.** *(Kirsty Paine, Splunk)*
 
-**Vigil's answer — A reasoning layer, not another platform:** Vigil **consumes** Splunk's and Cisco's existing Model Context Protocol tools. No new platform, no new data plane, no new role-based access control regime. Same RBAC, same data, new reasoning layer. One investigation across both stacks.
+**Vigil's answer:** A **reasoning layer, not another platform**. Consumes existing Splunk and Cisco MCP tools. Same RBAC, same data, no new data plane. One investigation across both stacks.
 
 ### 4. Reactive Operations Are No Longer Enough — Splunk Leadership Is Publicly Calling for Proactive
 
@@ -53,7 +53,7 @@ These are not generic industry pains. Each problem statement is grounded in Splu
 > *"Agentic AI enables organizations to get ahead of incidents, contain issues before they spread, and improve service reliability."*
 > — Kamal Hathi, SVP & GM, Splunk · [*MachineGPT, Agentic AI*](https://www.splunk.com/en_us/blog/leadership/machinegpt-agentic-ai-and-the-new-foundation-for-digital-resilience.html)
 
-**Vigil's answer — Phase 4 Proactive Forecasting Layer:** Cisco Time Series Model and Chronos run continuously on Splunk telemetry, forecasting 24 steps ahead (~2 hours). Three trigger types — Threshold, Trajectory, Uncertainty — fire **before** the alerting system would have. No competitor in the market today combines foundation-model forecasting with agentic investigation.
+**Vigil's answer:** Phase 4 Proactive Forecasting Layer — Cisco Time Series Model + Chronos run continuously on Splunk telemetry, **forecasting up to 10 hours ahead**. Three trigger types fire **before** the alerting system would have. The only product combining foundation-model forecasting with agentic investigation.
 
 ### 5. Decisions at Machine Scale Without an Audit Trail Is an Organizational Risk
 
@@ -61,7 +61,7 @@ These are not generic industry pains. Each problem statement is grounded in Splu
 - **65% of CISOs sense burnout in their employees.** *([Splunk CISO Report](https://www.splunk.com/en_us/campaigns/ciso-report.html))*
 - *"Agentic audit trails are mandatory — agents are digital identities requiring least-privilege access and explainable decision logs."* *(Splunk Security Predictions 2026)*
 
-**Vigil's answer — Pydantic-validated JSON report per investigation:** Finite State Machine transition log, tool call trace, Retrieval-Augmented Generation retrieval log, forecast snapshot, confidence score, evidence list. Sarbanes-Oxley and SOC 2 usable. **No alert is silently ignored.** Every decision is fully inspectable.
+**Vigil's answer:** **Pydantic-validated JSON report on every investigation** — FSM transition log, tool call trace, RAG retrieval log, forecast snapshot, confidence score, evidence. **No alert silently ignored.** Sarbanes-Oxley + SOC 2 usable.
 
 ---
 
@@ -197,11 +197,7 @@ Finite State Machine investigation (forecast snapshot attached to audit trail)
 Feedback loop — labeled fine-tuning corpus for supervised CTSM fine-tuning
 ```
 
-**CTSM status — per [Cisco and Splunk's joint announcement, 24 November 2025](https://www.splunk.com/en_us/blog/artificial-intelligence/introducing-the-cisco-time-series-model.html)** (Liang Gou and Sonal Pardeshi):
-- 1.0-preview shipped, **v1.0 due early 2026** — open-weights on Hugging Face (`cisco-ai/cisco-time-series-model-1.0-preview`) and GitHub (`splunk/cisco-time-series-model`)
-- Trained on **300B+ datapoints across ~400M time series**, six months of machine data, plus the GiftEval and Chronos open datasets
-- **Designed for the same three personas Vigil targets**: SREs (capacity automation), DevOps (predictive alerts), Admins / Analysts (dashboards for resource exhaustion and SLO violations) — Vigil's incident commander is the first application that uses one model to serve all three
-- **Architecturally produces both quantile and point predictions** — the quantile output is in the model; only the Hugging Face Spaces API surfacing is missing. This is why Priority 0 in [`splunk_evals.ipynb`](../splunk_evals.ipynb) ("ask Cisco to expose quantile outputs") is one hour of work, not a model change.
+**CTSM status:** 1.0-preview shipped 24 November 2025 (open-weights on Hugging Face + GitHub); **v1.0 due early 2026** — partnership window is open now. Trained on 300B+ datapoints. **Architecturally produces both quantile and point predictions** — only the Spaces API surfacing is missing, which is why Priority 0 in [`splunk_evals.ipynb`](../splunk_evals.ipynb) is one hour of work, not a model change. [Launch blog: Liang Gou + Sonal Pardeshi](https://www.splunk.com/en_us/blog/artificial-intelligence/introducing-the-cisco-time-series-model.html).
 
 **Three knowledge sources, three time orientations — no competitor has all three:**
 
@@ -448,18 +444,21 @@ The metrics that prove the platform works — measured across the four reference
 
 ## The Bottom Line
 
+**Vigil is the agentic reasoning substrate Cisco's AgenticOps vision requires** — running today as a 4-phase application, ready tomorrow as the platform layer that internal product teams, customer deployments, and the developer ecosystem all build on.
+
 | Capability | Status |
 |---|---|
 | 35–40% of alerts suppressed at zero tokens before any model call | ✅ Shipped |
 | 0.91 precision matching Cisco's claimed Deep Network Model target | ✅ Shipped |
-| 57% lower token cost vs. unconstrained — $423K/year at 10K alerts/day | ✅ Shipped |
+| **80–85% lower cost per investigation** vs. unconstrained — **~$620K/year saved at 10K alerts/day** (schema + caching + tiering) | ✅ Shipped |
 | Full audit trail per investigation — Sarbanes-Oxley + SOC 2 usable | ✅ Shipped |
 | Pinecone RAG grounding every investigation step | ✅ Shipped |
 | Outcome-based metrics replacing MTTR — precision, suppression, cost per decision | ✅ Shipped |
-| Foundation-model forecasting layer with three trigger types — visible in war-room UI | ✅ Shipped (mock) |
+| Foundation-model forecasting layer (Cisco Time Series Model + Chronos) with three trigger types | ✅ Shipped (mock) |
 | Mean Time to Resolve: 47 min → 35s on Priority 2 incidents | ✅ Shipped |
-| Comprehensive competitive landscape against five tiers / 25+ vendors | ✅ Documented |
+| Platform substrate model — five levers, three audience tiers, compounding ecosystem | ✅ Documented |
+| Comprehensive competitive landscape across five tiers / 25+ vendors | ✅ Documented |
 
-Cisco is building the horizontal platform. Vigil is the vertical application — the network incident commander that takes Cisco's hooks and runs a high-precision, cost-optimized, auditable, proactive investigation end-to-end.
+**The path forward:** when Cisco AI Canvas ships, Vigil's Finite State Machine workflows drop into it. When the Deep Network Model ships, the Large Language Model call swaps out. When Cisco Time Series Model v1.0 ships in early 2026, quantile outputs unlock the full confidence-routing layer. The architecture is built to **absorb Cisco's roadmap and the foundation-model ecosystem — not race them**.
 
-**The question is not whether this gets built. Cisco's keynote makes clear it will be. The question is who owns the incident commander layer when it does.**
+**The question is not whether this gets built. Cisco's keynote and Splunk's 2026 predictions make clear it will be. The question is who owns the agentic reasoning layer when it does — and who has the platform substrate that the next 50 applications build on.**
